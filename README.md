@@ -57,12 +57,21 @@ animal-recognition/
 │   ├── transfer/             # pretrained backbone experiments
 │   └── checkpoints/          # saved .pt files
 ├── src/
-│   ├── data/                 # Dataset, augmentations, split logic
-│   ├── models/               # baseline CNN, transfer head, detector wrapper
-│   ├── training/             # train loop, losses, LR schedulers
-│   ├── evaluation/           # metrics, confusion matrix
-│   ├── ood/                  # threshold calibration, temperature scaling
-│   └── xai/                  # Grad-CAM, occlusion maps, visualisation
+│  ├── models/
+│  │   ├── detector.py        # AnimalDetector
+│  │   ├── baseline_cnn.py    # BaselineCNN (nn.Module)
+│  │   └── transfer_model.py  # TransferClassifier (nn.Module)
+│  ├── data/
+│  │   ├── dataset.py         # AnimalDataset (torch Dataset)
+│  │   └── augmentations.py   # functions, not a class — fine as-is
+│  ├── training/
+│  │   └── trainer.py         # Trainer
+│  ├── ood/
+│  │   └── gate.py            # OODGate
+│  ├── evaluation/
+│  │   └── evaluator.py       # Evaluator
+│  └── xai/
+│      └── gradcam_wrapper.py # GradCAMExplainer
 ├── notebooks/                # EDA, per-experiment exploration
 ├── inference.py              # ← interface is fixed, pipeline lives behind it
 ├── requirements.txt

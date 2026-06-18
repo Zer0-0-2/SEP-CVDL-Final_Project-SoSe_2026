@@ -1,14 +1,17 @@
 from datasets import load_dataset
+from datasets import concatenate_datasets
+from huggingface_hub import hf_hub_download
+from datasets import Image
+import zipfile
+import os
+
 
 # 1. Datensätze laden (ohne Barkopedia, da dies ein Audio-Datensatz ist)
 print("Lade Datensätze herunter...")
 ds_saugat = load_dataset("Saugatkafley/dog-breed-classification", split="train")
 ds_lpastor = load_dataset("lpastor75/dog-breed-classification", split="train")
 
-from huggingface_hub import hf_hub_download
-from datasets import Image
-import zipfile
-import os
+
 
 print("Lade Bilder für lpastor herunter...")
 zip_path = hf_hub_download(repo_id="lpastor75/dog-breed-classification", filename="dog-images.zip", repo_type="dataset")
@@ -71,7 +74,6 @@ ds_lpastor = ds_lpastor.map(assign_unified_id)
 def filter_columns(ds):
     return ds.select_columns(["image", "unified_label_id", "unified_label_text"])
 
-from datasets import concatenate_datasets
 combined_dataset = concatenate_datasets([
     filter_columns(ds_saugat),
     filter_columns(ds_lpastor),

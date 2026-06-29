@@ -16,7 +16,7 @@ SUBREDDITS = {
     "Ragdoll": "https://www.reddit.com/r/ragdollcats/",
     "Sphynx": "https://www.reddit.com/r/SphynxCats/",
     "Tabby": "https://www.reddit.com/r/TabbyCats/",
-    # "Tiger_Cat": "TODO: find some other source",
+    # "Tiger_Cat": "TODO: find some other source", see tiger_cat_downloader.py,
     "Beagle": "https://www.reddit.com/r/beagles/",
     "Pug": "https://www.reddit.com/r/pugs/",
     "Boxer": "https://www.reddit.com/r/Boxer/",

@@ -55,7 +55,7 @@ pip install -r requirements.txt
 **Note for AMD GPU (ROCm) Users:**
 If you are running an AMD GPU and want to use ROCm, `pip` will not automatically download the ROCm version of PyTorch by default. You must point pip to the specific ROCm wheel repository. You might need to change the version of ROCm in the command below to match your installed ROCm version, e.g. you might need to use 'rocm6.0' if you have ROCm 6.0 installed.
    ```bash
-   pip install -r requirements.txt --index-url https://download.pytorch.org/whl/rocm7.2
+   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/rocm7.2
    ```
 
 ---

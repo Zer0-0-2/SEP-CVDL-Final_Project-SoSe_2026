@@ -42,7 +42,7 @@ CLASSES = [
     "Maine_Coon",         #  5
     "Ragdoll",            #  6
     "Sphynx",             #  7
-    "Tabby",              #  8 ## not in oxford pet
+    "Tabby",              #  8
     "Tiger_Cat",          #  9
     "Beagle",             # 10
     "Pug",                # 11

@@ -10,14 +10,7 @@ def download_tiger_cat_images():
     
     # ImageNet label for Tiger Cat (n02123159) is 282
     TARGET_LABEL = 282
-    
-    print("Loading ImageNet-1k in streaming mode...")
-    print("Note: ILSVRC/imagenet-1k is a gated dataset on Hugging Face.")
-    print("If you haven't already, you must:")
-    print("  1. Go to https://huggingface.co/datasets/ILSVRC/imagenet-1k and accept the terms.")
-    print("  2. Authenticate locally by running 'huggingface-cli login'")
-    print("-" * 50)
-    
+        
     try:
         dataset = load_dataset("ILSVRC/imagenet-1k", split="train", streaming=True)
         

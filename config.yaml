@@ -1,0 +1,69 @@
+# =============================================================
+#  Animal Recognition — Pipeline Configuration
+#  Change values here to swap models or tune hyperparameters.
+#  No code changes needed to switch between classifiers.
+# =============================================================
+
+# -------------------------------------------------------------
+# Pipeline routing
+# -------------------------------------------------------------
+pipeline:
+  detector: yolov8m.pt          # weights filename (must be findable on disk)
+  classifier: baseline_cnn      # 'baseline_cnn'  |  'transfer'
+  ood_gate: softmax_threshold   # 'softmax_threshold'  |  'temperature_scaling'  |  'energy'
+
+# -------------------------------------------------------------
+# Classifier settings
+# -------------------------------------------------------------
+classifier:
+  num_classes: 20               # 20 breeds — reject is handled by OODGate, not an output node
+
+  baseline_cnn:
+    weights: null               # path to .pt checkpoint; null = random init (for training)
+
+  transfer:
+    backbone: efficientnet_b3   # any timm model name, e.g. convnext_tiny, resnet50
+    pretrained: true            # use ImageNet pretrained weights for the backbone
+    weights: null               # path to .pt checkpoint; null = pretrained backbone + fresh head
+
+# -------------------------------------------------------------
+# OOD gate
+# -------------------------------------------------------------
+ood:
+  threshold: 0.5        # τ: reject if max(softmax(logits)) < threshold
+  temperature: 1.0      # T: divide logits by T before softmax (temperature_scaling only)
+                        # Note: energy score threshold has opposite polarity — see gate.py
+
+# -------------------------------------------------------------
+# Training
+# -------------------------------------------------------------
+training:
+  seed: 42
+  epochs: 25            # total epochs for baseline CNN; ignored for transfer (uses phases)
+  batch_size: 32
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  num_workers: 4
+
+  # Three-phase fine-tuning (transfer learning only)
+  phase1_epochs: 5      # freeze backbone, train head only at lr
+  phase2_epochs: 10     # unfreeze last 2 backbone blocks, lr / 10
+  phase3_epochs: 10     # unfreeze full network, cosine annealing to 0
+
+# -------------------------------------------------------------
+# Data
+# -------------------------------------------------------------
+data:
+  raw_dir: animal_recognition/data/raw
+  processed_dir: animal_recognition/data/processed
+  confounders_dir: animal_recognition/data/confounders
+  val_split: 0.2        # fraction of raw data held out for validation
+  image_size: 224       # both classifier input size and crop resize target
+
+# -------------------------------------------------------------
+# Logging
+# -------------------------------------------------------------
+logging:
+  use_wandb: false
+  project: sep-cvdl-animal-recognition
+  run_name: null        # auto-generated from timestamp if null

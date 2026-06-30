@@ -1,237 +1,210 @@
 # Animal Recognition Challenge
 **SEP: Computer Vision & Deep Learning — Group Project**
 
-> **Status: v1 — initial plan, open for team discussion**
+> **Status: active development — data pipeline complete, model training next**
 
 ---
 
-## What we're building
+## What this system does
 
-A system that takes an image and returns a single integer: one of 20 cat/dog breed indices, or `−1` if the image contains no target-class animal. The evaluation runs on a private held-out test set through a fixed `inference.py` interface we cannot modify.
+Given an input image, the system returns a single integer:
+- `0–19` — one of 20 cat/dog breed indices
+- `-1` — reject (no target species present, or confidence below threshold)
 
-The tricky parts are not the classification itself — they are the **reject class** (confounders must return `−1`, wrong accepts are penalised equally to wrong breed predictions) and the **multi-animal rule** (largest target-class animal by bounding box area determines the label).
-
----
-
-## Our planned pipeline
-
-```
-Input image
-     │
-     ▼
-┌──────────────────────┐
-│   Object Detector    │  YOLOv8 off-the-shelf, no fine-tuning
-│                      │  → bounding boxes for cats & dogs
-└─────────┬────────────┘
-          │  crop largest detected region
-          ▼
-┌──────────────────────┐
-│   Classifier         │  PyTorch, trained by us
-│   20 breeds + OOD    │  → softmax logits over 21 outputs
-└─────────┬────────────┘
-          │
-          ▼
-┌──────────────────────┐
-│   OOD Gate           │  confidence < τ  →  return −1
-│                      │  else  →  return argmax
-└─────────┬────────────┘
-          │
-          ▼
-     {−1, 0, …, 19}
-```
-
-We are splitting the problem into three independent pieces so they can be developed and swapped out separately: the detector, the classifier, and the OOD gate. None of these interfaces are fixed in stone yet.
-
----
-
-## Setup & Installation
-
-To install the required dependencies:
-
+The evaluation interface is fixed at `inference.py`. Run it as:
 ```bash
-pip install -r requirements.txt
+python inference.py --image-folder <path-to-folder>
+```
+The folder must contain images and a `labels.csv` with columns `filename,label`.
+
+---
+
+## Pipeline
+
+```
+Input image (PIL)
+      │
+      ▼
+AnimalDetector (YOLOv8m, off-the-shelf)
+      │  → finds all cats/dogs in the image
+      │  → no detections → return -1
+      │  → selects largest bounding box by area
+      │  → crops and resizes to 224×224
+      ▼
+Classifier (BaselineCNN or TransferClassifier)
+      │  → raw logits over 20 breed classes
+      ▼
+OODGate
+      │  → max(softmax(logits)) < τ → return -1
+      │  → else → return argmax
+      ▼
+{-1, 0, …, 19}
 ```
 
-**Note for AMD GPU (ROCm) Users:**
-If you are running an AMD GPU and want to use ROCm, `pip` will not automatically download the ROCm version of PyTorch by default. You must point pip to the specific ROCm wheel repository. You might need to change the version of ROCm in the command below to match your installed ROCm version, e.g. you might need to use 'rocm6.0' if you have ROCm 6.0 installed.
-   ```bash
-   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/rocm7.2
-   ```
+Swap the classifier and OOD method by editing `config.yaml` — no code changes needed.
+
+---
+
+## Class mapping
+
+| Index | Class | Index | Class |
+|---|---|---|---|
+| 0 | Abyssinian | 10 | Beagle |
+| 1 | Bengal | 11 | Pug |
+| 2 | Birman | 12 | Boxer |
+| 3 | Bombay | 13 | Shiba\_Inu |
+| 4 | British\_Shorthair | 14 | Samoyed |
+| 5 | Maine\_Coon | 15 | Golden\_Retriever |
+| 6 | Ragdoll | 16 | German\_Shepherd |
+| 7 | Sphynx | 17 | Siberian\_Husky |
+| 8 | Tabby | 18 | Dalmatian |
+| 9 | Tiger\_Cat | 19 | Rottweiler |
 
 ---
 
 ## Repository layout
 
 ```
-animal-recognition/
-├── data/
-│   ├── raw/                  # original validation set (not committed to git)
-│   ├── processed/            # train/val split, normalised
-│   └── confounders/          # extra OOD images + sources.txt
-├── models/
-│   ├── baseline/             # CNN trained from scratch
-│   ├── transfer/             # pretrained backbone experiments
-│   └── checkpoints/          # saved .pt files
-├── src/
-│  ├── models/
-│  │   ├── detector.py        # AnimalDetector
-│  │   ├── baseline_cnn.py    # BaselineCNN (nn.Module)
-│  │   └── transfer_model.py  # TransferClassifier (nn.Module)
-│  ├── data/
-│  │   ├── dataset.py         # AnimalDataset (torch Dataset)
-│  │   └── augmentations.py   # functions, not a class — fine as-is
-│  ├── training/
-│  │   └── trainer.py         # Trainer
-│  ├── ood/
-│  │   └── gate.py            # OODGate
-│  ├── evaluation/
-│  │   └── evaluator.py       # Evaluator
-│  └── xai/
-│      └── gradcam_wrapper.py # GradCAMExplainer
-├── notebooks/                # EDA, per-experiment exploration
-├── inference.py              # ← interface is fixed, pipeline lives behind it
+.
+├── config.yaml                        # pipeline routing + all hyperparameters
+├── inference.py                       # fixed evaluation interface (do not change outer structure)
+├── test_dataset.py                    # sanity checks for data pipeline
 ├── requirements.txt
-└── README.md
+├── README.md
+└── animal_recognition/
+    ├── data/
+    │   ├── raw/                       # training images — one subfolder per breed (not committed)
+    │   ├── processed/                 # train/val split after preprocessing (not committed)
+    │   └── confounders/               # OOD images labelled -1 (not committed)
+    └── src/
+        ├── config.py                  # load_config() → dot-accessible config namespace
+        ├── data/
+        │   ├── dataset.py             # AnimalDataset (torch Dataset)
+        │   ├── augmentations.py       # get_train_transforms / get_val_transforms
+        │   ├── reddit_downloader.py   # gallery-dl scraper for breed subreddits
+        │   └── tiger_cat_downloader.py # ImageNet-1k streaming for Tiger Cat class
+        ├── models/
+        │   ├── detector.py            # AnimalDetector (YOLOv8 wrapper)
+        │   ├── baseline_cnn.py        # BaselineCNN — ResNet-style, trained from scratch
+        │   └── transfer_model.py      # TransferClassifier — timm backbone (TODO)
+        ├── training/
+        │   └── trainer.py             # Trainer — training loop (TODO)
+        ├── ood/
+        │   └── gate.py                # OODGate — softmax threshold / energy (TODO)
+        ├── evaluation/
+        │   └── evaluator.py           # Evaluator — per-class metrics (TODO)
+        └── xai/
+            └── gradcam_wrapper.py     # GradCAMExplainer (TODO)
 ```
 
 ---
 
-## Classifier — what we plan to train
+## Setup
 
-### Baseline (mandatory)
+Requires **Python 3.11**. Python 3.14 fails to build numpy/scipy wheels.
 
-We need at least one model trained from random initialisation. We plan a ResNet-style CNN:
-
-```
-Conv(3→64) → BN → ReLU → MaxPool
-ResBlock(64→64)  × 2
-ResBlock(64→128, stride=2) × 2
-ResBlock(128→256, stride=2) × 2
-GlobalAvgPool → FC(256→21)
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-This gives us a concrete lower bound to compare everything else against, and satisfies the course requirement.
-
-### Main approach — transfer learning
-
-We plan to fine-tune a pretrained backbone with a fresh 21-class head. The candidates we want to compare:
-
-| Backbone | Params | Why it's interesting |
-|---|---|---|
-| `efficientnet_b3` | 12M | Fast, good accuracy/speed tradeoff |
-| `convnext_tiny` | 28M | Strong on fine-grained tasks |
-| `vit_base_patch16_224` | 86M | Best accuracy ceiling, slower |
-| `resnet50` | 25M | Well-understood, easy to debug |
-
-Fine-tuning strategy we're starting with:
-1. Freeze backbone, train head only — 5 epochs
-2. Unfreeze last two blocks, LR ÷ 10 — 10 epochs
-3. Full network, cosine annealing — 10 epochs
-
-We'll revisit this if it doesn't converge well.
+**AMD GPU (ROCm) users** — replace the pip step with:
+```bash
+pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/rocm7.2
+```
+Adjust the ROCm version suffix to match your installed ROCm (e.g. `rocm6.0`).
 
 ---
 
-## OOD / Reject class
+## Getting the data
 
-This is the part we're most uncertain about. Our plan is to start simple and add complexity only if needed.
+### Breed images (19 classes via Reddit)
 
-**Starting point — softmax threshold**
-Predict `−1` when `max(softmax(logits)) < τ`. Sweep τ on the validation set. Straightforward to implement and already addresses the basic case.
+Requires `gallery-dl` with a Firefox session cookie:
+```bash
+pip install gallery-dl
+python animal_recognition/src/data/reddit_downloader.py
+```
+Downloads up to 200 images per class into `animal_recognition/data/raw/<ClassName>/`. Skips classes that already have 200+ images.
 
-**If threshold alone isn't enough — temperature scaling**
-Learn a single scalar `T` on the val set to calibrate softmax confidence before thresholding. One extra parameter, often a significant improvement.
+### Tiger Cat (ImageNet-1k)
 
-**Things we want to explore if time allows**
-
-- **Energy-based OOD score** — use `−log Σ exp(logit_i)` instead of softmax max. Theoretically better separation between in- and out-of-distribution (Liu et al. 2020).
-- **Explicit confounder class** — add confounders as a 21st training class so the model learns to route OOD images to a dedicated output node rather than relying on post-hoc thresholding.
-- **OpenMax** — Weibull-based rejection at the activation level (Bendale & Boult 2016). Most complex option, only if earlier approaches fall short.
-
-We'll decide how far to go based on what the validation F1 on the reject class looks like after the first round of training.
-
----
-
-## Data
-
-### What we have
-
-The provided validation set is our only labelled data. It contains the 20 target breeds plus confounder images, with full bounding box and class label annotations.
-
-### Augmentation plan
-
-```python
-A.RandomResizedCrop(224, scale=(0.6, 1.0))
-A.HorizontalFlip(p=0.5)
-A.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3)
-A.GaussianBlur(p=0.3)
-A.CoarseDropout(max_holes=8, max_height=32, p=0.3)
-A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+Tiger Cat has no dedicated subreddit. Images are streamed from the gated ImageNet-1k dataset on HuggingFace (label 282, synset n02123159):
+```bash
+huggingface-cli login      # one-time: accept terms at huggingface.co/datasets/ILSVRC/imagenet-1k first
+python animal_recognition/src/data/tiger_cat_downloader.py
 ```
 
-### Extra confounder data
+### Confounder images
 
-We plan to supplement with OOD images from:
-- **ImageNet-1k** — non-target animal classes
-- **OpenImages v7** — filtered for non-target species
-- **iNaturalist** — wild animals, diverse backgrounds
+Not yet collected. Planned sources:
+- ImageNet-1k non-target-animal classes
+- OpenImages v7 non-target species
+- iNaturalist wild animals
 
-Source URLs will be tracked in `data/confounders/sources.txt`.
-
-### Additional techniques to test
-
-- **Mixup / CutMix** — interpolation between training samples, especially useful for fine-grained inter-class boundaries
-- **Test-time augmentation (TTA)** — average logits over multiple augmented versions at inference, essentially free accuracy gains
+Source URLs will be tracked in `animal_recognition/data/confounders/sources.txt`.
 
 ---
 
-## Explainable AI
+## Configuration
 
-Mandatory for the final report. We plan to use **Grad-CAM** as the primary method — it hooks into the last convolutional layer and is straightforward to implement with `pytorch-grad-cam`.
+All pipeline routing and hyperparameters live in `config.yaml`:
 
-What we want to show in the report:
-1. Does the model look at the animal or at the background?
-2. Are there breed-specific attention patterns (ears, fur texture, face shape)?
-3. Side-by-side comparison between baseline CNN and fine-tuned model
-4. Failure case analysis — wrong predictions, and what the saliency map reveals about why
+```yaml
+pipeline:
+  classifier: baseline_cnn      # 'baseline_cnn' | 'transfer'
+  ood_gate: softmax_threshold   # 'softmax_threshold' | 'temperature_scaling' | 'energy'
 
-We'll also run **occlusion sensitivity** as a cross-check since it requires no gradient access and works as a model-agnostic sanity check.
+classifier:
+  transfer:
+    backbone: efficientnet_b3   # any timm model name
+```
+
+Change `classifier: baseline_cnn` to `classifier: transfer` to route through the transfer model. No other changes needed.
 
 ---
 
-## Evaluation
+## Running the sanity tests
 
-Metrics are computed per class in one-vs-rest fashion, including the reject class. The provided script handles this — we just need to make sure `inference.py` produces correct output.
+With mock data already in place (`animal_recognition/data/raw/`), run:
+```bash
+python test_dataset.py
+```
 
-| Metric | Scope |
+Checks that:
+- Dataset loads and finds all 20 classes
+- `__getitem__` returns the correct tensor shape `[3, 224, 224]` and dtype `float32`
+- Normalisation is applied (values outside `[0, 1]`)
+- Train transforms are random (same image → different tensor)
+- Confounders load with label `-1`
+
+---
+
+## Current status
+
+| Component | Status |
 |---|---|
-| Accuracy | Overall |
-| Precision / Recall / F1 | Per class + macro + weighted avg |
-
-Key constraint: a wrong prediction on a confounder is penalised the same as a wrong breed prediction. We need to monitor reject-class recall explicitly throughout training, not just overall accuracy.
-
----
-
-## Reproducibility
-
-Every experiment fixes seeds before training:
-
-```python
-torch.manual_seed(42)
-np.random.seed(42)
-random.seed(42)
-torch.backends.cudnn.deterministic = True
-```
-
-We'll track all runs in Weights & Biases. Failed experiments get logged and documented — the report needs them.
+| `AnimalDetector` (YOLOv8) | Done |
+| `BaselineCNN` (from scratch) | Done |
+| `AnimalDataset` | Done |
+| `augmentations.py` | Done |
+| `config.yaml` + `config.py` | Done |
+| `TransferClassifier` (timm) | TODO |
+| `Trainer` | TODO |
+| `OODGate` | TODO |
+| `Evaluator` | TODO |
+| `GradCAMExplainer` | TODO |
+| Wire `inference.py::Model` | TODO |
+| Download training data | TODO |
 
 ---
 
 ## Deadlines
 
-| | |
+| Milestone | Date |
 |---|---|
-| Preliminary report | 25 June 2026 |
+| Preliminary report | 25 June 2026 ✓ |
 | Final presentation | 16 July 2026 |
 | Final submission | 2 August 2026 at 23:59 |
 
@@ -239,24 +212,13 @@ We'll track all runs in Weights & Biases. Failed experiments get logged and docu
 
 ## References
 
-Papers we're drawing on:
-
-- He et al. (2016) — *Deep Residual Learning for Image Recognition* · [arXiv:1512.03385](https://arxiv.org/abs/1512.03385)
+- He et al. (2016) — *Deep Residual Learning* · [arXiv:1512.03385](https://arxiv.org/abs/1512.03385)
 - Tan & Le (2019) — *EfficientNet* · [arXiv:1905.11946](https://arxiv.org/abs/1905.11946)
-- Liu et al. (2022) — *A ConvNet for the 2020s (ConvNeXt)* · [arXiv:2201.03545](https://arxiv.org/abs/2201.03545)
-- Dosovitskiy et al. (2021) — *An Image is Worth 16×16 Words (ViT)* · [arXiv:2010.11929](https://arxiv.org/abs/2010.11929)
+- Liu et al. (2022) — *ConvNeXt* · [arXiv:2201.03545](https://arxiv.org/abs/2201.03545)
+- Dosovitskiy et al. (2021) — *ViT* · [arXiv:2010.11929](https://arxiv.org/abs/2010.11929)
 - Selvaraju et al. (2017) — *Grad-CAM* · [arXiv:1610.02391](https://arxiv.org/abs/1610.02391)
-- Zeiler & Fergus (2014) — *Visualizing and Understanding CNNs* · [arXiv:1311.1901](https://arxiv.org/abs/1311.1901)
-- Guo et al. (2017) — *On Calibration of Modern Neural Networks* · [arXiv:1706.04599](https://arxiv.org/abs/1706.04599)
 - Liu et al. (2020) — *Energy-based OOD Detection* · [arXiv:2010.03759](https://arxiv.org/abs/2010.03759)
-- Bendale & Boult (2016) — *Towards Open Set Deep Networks (OpenMax)* · [arXiv:1511.06233](https://arxiv.org/abs/1511.06233)
-- Zhang et al. (2018) — *Mixup* · [arXiv:1710.09412](https://arxiv.org/abs/1710.09412)
-- Caron et al. (2021) — *DINO (self-supervised ViT)* · [arXiv:2104.14294](https://arxiv.org/abs/2104.14294)
 - Jocher et al. (2023) — *YOLOv8* · [github.com/ultralytics/ultralytics](https://github.com/ultralytics/ultralytics)
-
-Libraries:
+- Zhang et al. (2018) — *Mixup* · [arXiv:1710.09412](https://arxiv.org/abs/1710.09412)
 - `timm` — [github.com/huggingface/pytorch-image-models](https://github.com/huggingface/pytorch-image-models)
-- `pytorch-grad-cam` — [github.com/jacobgil/pytorch-grad-cam](https://github.com/jacobgil/pytorch-grad-cam)
-- `albumentations` — [albumentations.ai](https://albumentations.ai/docs)
-- OpenOOD benchmark — [github.com/Jingkang50/OpenOOD](https://github.com/Jingkang50/OpenOOD)
-- Oxford-IIIT Pet Dataset — [robots.ox.ac.uk/~vgg/data/pets](https://www.robots.ox.ac.uk/~vgg/data/pets/)
+- `albumentations` 2.x — [albumentations.ai](https://albumentations.ai)

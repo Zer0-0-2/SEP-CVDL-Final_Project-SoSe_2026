@@ -66,6 +66,10 @@ class BaselineCNN(nn.Module):
         self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(256, num_classes)
 
+    def get_last_conv_layer(self) -> nn.Module:
+        """Return the last conv layer — used as Grad-CAM target layer."""
+        return self.layer3[-1].conv2
+
     def forward(self, x):
         x = self.stem(x)
         x = self.layer1(x)
@@ -81,10 +85,10 @@ if __name__ == "__main__":
     dummy_input = torch.randn(4, 3, 224, 224) #Batch of 4 RGB images, 224x224
     output = model(dummy_input)
     print(f"Input shape: {dummy_input.shape}")
-    print(f"Output shape: {output.shape}") #Expected [4, 21]
+    print(f"Output shape: {output.shape}")  # Expected [4, 21]
 
     num_params = sum(p.numel() for p in model.parameters())
-    print("Total parameters: {num_params:,}")
+    print(f"Total parameters: {num_params:,}")
 
 '''num_classes = 21 corresponding to 20 breeds and 1 cofounder slot
 might swap for softmax threshholding '''

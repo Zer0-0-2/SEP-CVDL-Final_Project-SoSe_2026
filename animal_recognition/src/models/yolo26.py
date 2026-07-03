@@ -42,7 +42,7 @@ DOG_BREEDS = {
 # r/abyssinian will just return the cat since we presume that's the image we care about for training.
 # this is probably not perfect but it should work for now. Make sure that your animal_recognition/data/processed is empty before use
 def process_dataset(raw_dir: str, processed_dir: str, model_name: str = 'yolo26n.pt', debug: bool = False):
-    model = YOLO(model_name)
+    model = YOLO(model = animal_recog_dir / 'models' / model_name, verbose = False)
     raw_path = Path(raw_dir)
     processed_path = Path(processed_dir)
     
@@ -81,7 +81,7 @@ def process_dataset(raw_dir: str, processed_dir: str, model_name: str = 'yolo26n
                     print(f"Failed to load image: {img_path}")
                     continue
                     
-                results = model(img) # returns a list as result, not single item
+                results = model(img, verbose=False) # returns a list as result, not single item, verbose = false to make console less cluttered
                 
                 largest_area = 0
                 best_box = None

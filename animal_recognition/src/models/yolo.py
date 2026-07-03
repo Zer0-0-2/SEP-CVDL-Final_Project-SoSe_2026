@@ -2,6 +2,7 @@ import os
 import cv2
 from pathlib import Path
 from ultralytics import YOLO
+import shutil
 
 '''
             CLASSES = [
@@ -41,20 +42,19 @@ DOG_BREEDS = {
 # it takes the biggest bounding box of a cat or dog depending on the species (thus images with a dog and a cat in for exmaple) 
 # r/abyssinian will just return the cat since we presume that's the image we care about for training.
 # this is probably not perfect but it should work for now. Make sure that your animal_recognition/data/processed is empty before use
-def process_dataset(raw_dir: Path, processed_dir: Path, rejected_dir: Path, model_name: str = 'yolo26n.pt', debug: bool = False):
+def process_dataset(raw_dir: Path, processed_dir: Path, rejected_dir: Path, model_name: str, debug: bool = False):
     model = YOLO(model = animal_recog_dir / 'models' / model_name, verbose = False)
     # debug 
     if debug:
         print(raw_dir) 
         print(processed_dir)
         print(rejected_dir)
-    
+        shutil.rmtree(processed_dir, ignore_errors=True)
+        shutil.rmtree(rejected_dir, ignore_errors=True)
+        
     for breed in os.listdir(raw_dir):
         breed_dir = raw_dir / breed
         
-        if not breed_dir.is_dir():
-            print("error, not a directory")
-            exit(1)
             
         if breed in CAT_BREEDS:
             target_class = 15  
@@ -121,4 +121,7 @@ if __name__ == '__main__':
     processed_dir = animal_recog_dir / 'data' / 'processed'
     rejected_dir = animal_recog_dir / 'data' / 'rejected'
     
-    process_dataset(raw_dir, processed_dir, rejected_dir, debug=False)
+    # x model for better resutls 
+    process_dataset(raw_dir, processed_dir, rejected_dir, "yolo26x", debug=True)
+    
+

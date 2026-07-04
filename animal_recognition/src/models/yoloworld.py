@@ -116,8 +116,10 @@ def process_dataset(
 
             out_rejected_breed_dir = rejected_dir / breed
             out_rejected_breed_dir.mkdir(parents=True, exist_ok=True)
-
-            logger.info(f"Processing {breed}")
+            
+            
+            if __name__ == "__main__":
+                logger.info(f"Processing {breed}")
 
             placeholder(
                 model=model,
@@ -134,7 +136,8 @@ def process_dataset(
         print(f"Done. Operation took {time_end - time_start}")
 
     else:
-        logger.info(f"Processing test folder")
+        if __name__ == "__main__": 
+            logger.info(f"Processing test folder")
         result = placeholder(
             model=model,
             breed_dir=raw_dir,
@@ -165,7 +168,8 @@ def placeholder(
         img_path = breed_dir / img_name
         img = cv2.imread(str(img_path))
         if img is None:
-            logger.error(f"Failed to load file: {img_path}")
+            if __name__ == "__main__":  
+                logger.error(f"Failed to load file: {img_path}")
             continue
 
         results = model(
@@ -221,7 +225,8 @@ def placeholder(
             # In case no dog or cat is found in a dog or cat breed folder
             # which should happen pretty rarely, but i remember seeing a couple of images
             # while scraping that had no dog or cat in them (example one person with a dog bite)
-            logger.info(f"No cat or dog found in image: {img_path}, saving to rejected folder")
+            if __name__ == "__main__":
+                logger.info(f"No cat or dog found in image: {img_path}, saving to rejected folder")
 
     return results_dict
 

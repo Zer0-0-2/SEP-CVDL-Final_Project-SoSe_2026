@@ -7,18 +7,7 @@ import datetime
 from ultralytics import YOLOWorld, settings
 import logging
 
-logging_path = Path(__file__).resolve().parent.parent.parent.parent / "logs"
-logging_path.mkdir(parents=True, exist_ok=True)
 
-logging.basicConfig(
-    format="{asctime} - {levelname} - {message}",
-    style="{",
-    datefmt="%Y-%m-%d %H:%M",
-    filename="logs/yoloworld.log",
-    level=logging.INFO,
-)
-
-logger = logging.getLogger(__name__)
 
 CAT_BREEDS = {
     "Abyssinian",
@@ -94,6 +83,9 @@ def process_dataset(
     debug: bool = False,
     model_confidence_threshold: float = 0.25,
     test_provided_image_folder: bool = False,  # set to true if you want to test against the images provided by johannes and ming,
+    make_boxes_but_reject_targets: list[
+        str
+    ] = [],  # a list of animals that should be explicitly filtered out
     # in that case ignore all the x_dir parameters
 ):
 
@@ -145,13 +137,14 @@ def process_dataset(
         logger.info(f"Processing test folder")
         result = placeholder(
             model=model,
-            breed_dir=Path("images"),
-            out_breed_dir=animal_recog_dir / "data" / "processed_yoloworld_provided",
-            out_rejected_breed_dir=animal_recog_dir / "data" / "rejected_yoloworld_provided",
+            breed_dir=raw_dir,
+            out_breed_dir=processed_dir,
+            out_rejected_breed_dir=rejected_dir,
             valid_targets=valid_targets,
             invalid_targets=invalid_targets,
             model_confidence_threshold=model_confidence_threshold,
             test_provided_image_folder=True,
+            make_boxes_but_reject_targets=make_boxes_but_reject_targets,
         )
         return result
 
@@ -165,6 +158,7 @@ def placeholder(
     invalid_targets: list[int] = INVALID_TARGETS,
     model_confidence_threshold: float = 0.25,
     test_provided_image_folder: bool = False,
+    make_boxes_but_reject_targets: list[str] = [],
 ):
     results_dict: dict[str, str] = {}
     for img_name in os.listdir(breed_dir):
@@ -190,7 +184,14 @@ def placeholder(
         for result in results:
             for box in result.boxes:
                 cls_id = int(box.cls[0].item())
-                if cls_id in valid_targets and cls_id not in invalid_targets:
+                if test_provided_image_folder:
+                    is_valid = (
+                        cls_id in valid_targets or cls_id in make_boxes_but_reject_targets
+                    ) and cls_id not in invalid_targets
+                else:
+                    is_valid = cls_id in valid_targets and cls_id not in invalid_targets
+
+                if is_valid:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     confidence = box.conf[0].item()
                     area = (x2 - x1) * (y2 - y1)
@@ -201,6 +202,11 @@ def placeholder(
                         best_cls_id = cls_id
                         best_box_confidence = confidence
 
+        if test_provided_image_folder:
+            if best_cls_id is not None and best_cls_id in valid_targets:
+                results_dict[img_name] = "catordog"
+            else:
+                results_dict[img_name] = "notcatordog"
         if best_box is not None:
             x1, y1, x2, y2 = best_box
             cropped = img[y1:y2, x1:x2]
@@ -217,9 +223,23 @@ def placeholder(
             # while scraping that had no dog or cat in them (example one person with a dog bite)
             logger.info(f"No cat or dog found in image: {img_path}, saving to rejected folder")
 
+    return results_dict
 
 
 if __name__ == "__main__":
     # x model for better resutls
+    
+    logging_path = Path(__file__).resolve().parent.parent.parent.parent / "logs"
+    logging_path.mkdir(parents=True, exist_ok=True)
+
+    logging.basicConfig(
+        format="{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M",
+        filename="logs/yoloworld.log",
+        level=logging.INFO,
+    )
+
+    logger = logging.getLogger(__name__)
 
     process_dataset(model_name="yolov8x-worldv2.pt", debug=True)

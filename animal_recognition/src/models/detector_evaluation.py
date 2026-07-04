@@ -14,32 +14,17 @@ import animal_recognition.src.models.yoloworld as yoloworld
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+ANIMAL_RECOG_DIR = PROJECT_ROOT / "animal_recognition"
+
 DEFAULT_IMAGE_FOLDER = PROJECT_ROOT / "images"
 DEFAULT_LABELS_FILE = DEFAULT_IMAGE_FOLDER / "labels.csv"
 
 
 CONFIDENCE_THRESHOLDS = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
-MODELS = ["YOLOv8s-worldv2", "YOLOv8m-worldv2", "YOLOv8l-worldv2", "YOLOv8x-worldv2"]
+MODELS = ["yolov8s-worldv2.pt", "yolov8m-worldv2.pt", "yolov8l-worldv2.pt", "yolov8x-worldv2.pt"]
 
 CAT_OR_DOG_LABELS = [i for i in range(0, 20)]
 CONFOUNDER_LABEL = -1
-
-
-def evaluate_detector(
-    confidence_threshold: float,
-    classes: list[str],
-    valid_targets: list[int],
-    invalid_targets: list[int],
-) -> dict[str, str]:
-    result = yoloworld.process_dataset(
-        model_classes=classes,
-        valid_targets=valid_targets,
-        invalid_targets=invalid_targets,
-        debug=False,
-        model_confidence_threshold=confidence_threshold,
-        test_provided_image_folder=True,
-    )
-    return result
 
 
 def evaluate_image_folder(
@@ -48,32 +33,63 @@ def evaluate_image_folder(
     image_folder: Path = DEFAULT_IMAGE_FOLDER,
 ):
 
-    classes, valid_targets, invalid_targets = compute_classes()
+    classes_list, valid_targets_list, make_boxes_but_reject_target, invalid_targets_list = (
+        compute_classes()
+    )
 
     labels_path = image_folder / "labels.csv"
     df = pd.read_csv(labels_path)
 
-    for single_class in classes:
-        for confidence_threshold in CONFIDENCE_THRESHOLDS:
-            logging.info(
-                f"Evaluating detector with confidence threshold {confidence_threshold} and class set {single_class}"
-            )
-            image_label_dict = evaluate_detector(
-                confidence_threshold, single_class, valid_targets, invalid_targets
-            )
-        y_true = []
-        y_pred = []
-        for filename, label in df[["filename", "label"]].itertuples(index=False):
-            y_true = label
-            y_pred = image_label_dict[filename]
-            
-            if y_true != -1 and y_pred == "notcatordog"
+    results = []
+    for model_name in MODELS:
+        for single_class, v_targets, i_targets in zip(
+            classes_list, valid_targets_list, invalid_targets_list
+        ):
+            for confidence_threshold in CONFIDENCE_THRESHOLDS:
+                logging.info(
+                    f"Evaluating detector with confidence threshold {confidence_threshold} and class set {single_class} and model {model_name}"
+                )
+                image_label_dict = yoloworld.process_dataset(
+                    raw_dir=PROJECT_ROOT / "images",
+                    processed_dir=ANIMAL_RECOG_DIR / "data" / "processed_yoloworld",
+                    rejected_dir=ANIMAL_RECOG_DIR / "data" / "rejected_yoloworld",
+                    model_name=model_name,
+                    model_confidence_threshold=confidence_threshold,
+                    model_classes=single_class,
+                    valid_targets=v_targets,
+                    invalid_targets=i_targets,
+                    make_boxes_but_reject_targets=make_boxes_but_reject_target,
+                    test_provided_image_folder=True,
+                )
 
-            correct = sum(expected == predicted for expected, predicted in zip(y_true, y_pred))
-            total = len(y_true)
-            accuracy = correct / total
+                y_true_list = []
+                y_pred_list = []
+                for filename, label in df[["filename", "label"]].itertuples(index=False):
+                    expected = "catordog" if label != -1 else "notcatordog"
+                    predicted = image_label_dict[filename]
 
-    return accuracy
+                    y_true_list.append(expected)
+                    y_pred_list.append(predicted)
+
+                correct = sum(
+                    expected == predicted for expected, predicted in zip(y_true_list, y_pred_list)
+                )
+                total = len(y_true_list)
+                accuracy = correct / total if total > 0 else 0
+
+                results.append(
+                    {
+                        "class_set": str(single_class),
+                        "confidence_threshold": confidence_threshold,
+                        "accuracy": accuracy,
+                    }
+                )
+
+    results_df = pd.DataFrame(results)
+    results_df.to_csv(out_csv_path, index=False)
+    logging.info(f"Evaluation results saved to {out_csv_path}")
+
+    return results_df
 
 
 def main():
@@ -99,12 +115,11 @@ def main():
 def compute_classes():
     classes = []
     valid_targets = []
+    make_boxes_but_reject_targets = []
     invalid_targets = []
 
     # All options
-    classes1 = [
-        "animal",
-        # ACCEPT
+    accept = [
         "cat",
         "dog",
         "domestic cat",
@@ -112,57 +127,27 @@ def compute_classes():
         "sphynx cat",
         "bombay cat",
         "birman cat",
-        ## REJECT
+    ]
+
+    make_boxes_but_reject = [
         "tiger",
-        "wild tiger",
+        "big tiger",
+        "predator tiger",
+        "fox",
+        "wolf",
+        "coyote",
+    ]
+
+    reject = [
         "drawing",
         "painting",
-        "big tiger",
-        "predator",
     ]
-    cutoff1 = classes1.index("tiger")
-    valid_targets1 = [i for i in range(1, cutoff1)]
-    invalid_targets1 = [i for i in range(cutoff1, len(classes1))]
+    classes.append(accept + make_boxes_but_reject + reject)
+    valid_targets.append(accept)
+    make_boxes_but_reject_targets.append(make_boxes_but_reject)
+    invalid_targets.append(make_boxes_but_reject + reject)
 
-    classes.append(classes1)
-    valid_targets.append(valid_targets1)
-    invalid_targets.append(invalid_targets1)
-
-    # Just cat and dog
-    classes2 = [
-        "animal",
-        # ACCEPT
-        "cat",
-        "dog",
-    ]
-    valid_targets2 = [1, 2]
-    invalid_targets2 = []
-
-    classes.append(classes2)
-    valid_targets.append(valid_targets2)
-    invalid_targets.append(invalid_targets2)
-
-    # some more options but w/o duplicate reject classes
-    classes3 = [
-        "animal",
-        # ACCEPT
-        "cat",
-        "dog",
-        "domestic cat",
-        "domestic dog",
-        ## REJECT
-        "tiger",
-        "drawing",
-    ]
-    cutoff3 = classes3.index("tiger")
-    valid_targets3 = [i for i in range(1, cutoff3)]
-    invalid_targets3 = [i for i in range(cutoff3, len(classes3))]
-
-    classes.append(classes3)
-    valid_targets.append(valid_targets3)
-    invalid_targets.append(invalid_targets3)
-
-    return classes, valid_targets, invalid_targets
+    return classes, valid_targets, make_boxes_but_reject_targets, invalid_targets
 
 
 if __name__ == "__main__":

@@ -11,3 +11,4 @@ matplotlib
 seaborn
 wandb
 gallery-dl
+logging

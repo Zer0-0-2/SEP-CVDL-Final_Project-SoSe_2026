@@ -93,7 +93,7 @@ def process_dataset(
     invalid_targets: list[int] = INVALID_TARGETS,
     debug: bool = False,
     model_confidence_threshold: float = 0.25,
-    provided_test_folder: bool = False,  # set to true if you want to test against the images provided by johannes and ming,
+    test_provided_image_folder: bool = False,  # set to true if you want to test against the images provided by johannes and ming,
     # in that case ignore all the x_dir parameters
 ):
 
@@ -115,7 +115,7 @@ def process_dataset(
         shutil.rmtree(processed_dir, ignore_errors=True)
         shutil.rmtree(rejected_dir, ignore_errors=True)
 
-    if not provided_test_folder:
+    if not test_provided_image_folder:
         for breed in os.listdir(raw_dir):
             breed_dir = raw_dir / breed
 
@@ -135,11 +135,15 @@ def process_dataset(
                 valid_targets=valid_targets,
                 invalid_targets=invalid_targets,
                 model_confidence_threshold=model_confidence_threshold,
+                test_provided_image_folder=False,
             )
 
-    else: 
+        time_end = datetime.datetime.now()
+        print(f"Done. Operation took {time_end - time_start}")
+
+    else:
         logger.info(f"Processing test folder")
-        placeholder(
+        result = placeholder(
             model=model,
             breed_dir=Path("images"),
             out_breed_dir=animal_recog_dir / "data" / "processed_yoloworld_provided",
@@ -147,9 +151,9 @@ def process_dataset(
             valid_targets=valid_targets,
             invalid_targets=invalid_targets,
             model_confidence_threshold=model_confidence_threshold,
+            test_provided_image_folder=True,
         )
-    time_end = datetime.datetime.now()
-    print(f"Done. Operation took {time_end - time_start}")
+        return result
 
 
 def placeholder(
@@ -160,7 +164,9 @@ def placeholder(
     valid_targets: list[int] = VALID_TARGETS,
     invalid_targets: list[int] = INVALID_TARGETS,
     model_confidence_threshold: float = 0.25,
+    test_provided_image_folder: bool = False,
 ):
+    results_dict: dict[str, str] = {}
     for img_name in os.listdir(breed_dir):
         img_path = breed_dir / img_name
         img = cv2.imread(str(img_path))
@@ -174,10 +180,13 @@ def placeholder(
 
         largest_area = 0
         best_box = None
+        best_cls_id = None
 
         best_box_confidence = 0
 
         # https://docs.ultralytics.com/tasks/detect#results-output
+        is_animal_but_not_cat_or_dog = False
+
         for result in results:
             for box in result.boxes:
                 cls_id = int(box.cls[0].item())
@@ -189,6 +198,7 @@ def placeholder(
                     if area > largest_area:
                         largest_area = area
                         best_box = (int(x1), int(y1), int(x2), int(y2))
+                        best_cls_id = cls_id
                         best_box_confidence = confidence
 
         if best_box is not None:
@@ -206,6 +216,7 @@ def placeholder(
             # which should happen pretty rarely, but i remember seeing a couple of images
             # while scraping that had no dog or cat in them (example one person with a dog bite)
             logger.info(f"No cat or dog found in image: {img_path}, saving to rejected folder")
+
 
 
 if __name__ == "__main__":

@@ -59,6 +59,15 @@ data:
   confounders_dir: animal_recognition/data/confounders
   val_split: 0.2        # fraction of raw data held out for validation
   image_size: 224       # both classifier input size and crop resize target
+  normalize_mean: [0.485, 0.456, 0.406]    #TODO values should be changed standard values from ImageNet
+  normalize_std: [0.229, 0.224, 0.225]     #TODO values should be changed standard values from ImageNet
+
+# -------------------------------------------------------------
+# xAI (Explainability)
+# -------------------------------------------------------------
+xai:
+  enabled: false
+  methode: gradcam__xai    # 'gradcam_xai' |
 
 # -------------------------------------------------------------
 # Logging

@@ -9,12 +9,12 @@ from pytorch_grad_cam.utils.image import show_cam_on_image
 from PIL import Image
 from torchvision import transforms
 
-def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg: dict, target_class: int | None = None):
+def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg, target_class: int | None = None):
     model.eval()
 
-    image_size = cfg["data"]["image_size"]
-    mean = cfg["data"]["normalize_mean"]
-    std = cfg["data"]["normalize_std"]
+    image_size = cfg.data.image_size
+    mean = cfg.data.normalize_mean
+    std = cfg.data.normalize_std
 
     transform = transforms.Compose([transforms.Resize((image_size, image_size)), transforms.ToTensor(), transforms.Normalize(mean= mean, std= std),])
     input_tensor = transform(image).unsqueeze(0)
@@ -29,7 +29,8 @@ def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg: dict, target_cl
         predicted_class = int(logits.argmax(dim= 1).item())
 
     if target_class is None:
-        target_class = cfg.get("xai", {}).get("target_class", None)
+        xai_cfg = getattr(cfg, "xai", None)
+        target_class = getattr(xai_cfg, "target_class", None) if xai_cfg else None
 
     used_target = predicted_class if target_class is None else target_class
     targets = [ClassifierOutputTarget(used_target)]

@@ -68,6 +68,7 @@ data:
 xai:
   enabled: false
   methode: gradcam__xai    # 'gradcam_xai' |
+  target_class: null       # null = automatically previous class
 
 # -------------------------------------------------------------
 # Logging

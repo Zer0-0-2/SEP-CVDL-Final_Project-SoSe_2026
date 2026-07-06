@@ -9,6 +9,12 @@ from pytorch_grad_cam.utils.image import show_cam_on_image
 from PIL import Image
 from torchvision import transforms
 
+import argparse
+from pathlib import Path
+import matplotlib.pyplot as plt
+from src.config import load_config
+from src.models.baseline_cnn import BaselineCNN
+
 def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg, target_class: int | None = None):
     model.eval()
 
@@ -41,3 +47,28 @@ def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg, target_class: i
 
     visualization = show_cam_on_image(rgb_float, grayscale_cam, use_rgb= True)
     return visualization, predicted_class, used_target
+
+
+if __name__ == "__main__":
+    parser = argparse.AugmentParser(description= "Grad-CAM for classifier")
+    parser.add_argument("--config", type= Path, default = None)
+    parser.add_argument("--image", type= Path, required= True)
+    parser.add_argument("--checkpoint", type= Path, default= None)
+    parser.add_argument("--num-classes", type= int, default= None)
+    parser.add_argument("--target-classes", type= int, default= None)
+    parser.add_argument("--output", type= Path, default= Path("gradcam_output.png"))
+    args = parser.parse_args()
+
+    cfg = load_config(args.config) if args.config else load_config()
+
+    model = BaselineCNN(num_classes= cfg.classifier.num_classes)
+    if args.checkpoint is not None:
+        model.load_state_dict(torch.load(args.checkpoint, map_location= "cpu"))
+
+    image = Image.open(args.image).convert("RGB")
+    visualization, predicted_class, used_target = run_gradcam(model, image, cfg, args.target_class)
+
+    print(f"Predicted class: {predicted_class}")
+    print(f"Heatmap generated for class: {used_target}")
+    plt.imsave(args.output, visualization)
+    print(f"Saved Heatmap to: {args.output}")

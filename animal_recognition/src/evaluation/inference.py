@@ -18,6 +18,11 @@ metrics.
     python inference.py --image-folder <folder>
 """
 
+# example usage: 
+# 
+# python -m animal_recognition.src.evaluation.inference --classifier-type convnext --weights-path animal_recognition/models/weights/convnext_tiny_False_32_0.001_224.pt
+#
+
 from animal_recognition.src.models.yoloworld import YoloWorldDetector
 from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
 from animal_recognition.src.models.classifier_gcvit import GCViTClassifier

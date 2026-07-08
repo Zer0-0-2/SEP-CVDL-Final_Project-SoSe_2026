@@ -1,6 +1,8 @@
 import argparse
 import logging
 from pathlib import Path
+from datetime import datetime
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -30,6 +32,8 @@ class ConvNextTrainer:
         pretrained: bool = True,
         batch_size: int = 32,
         lr: float = 0.01,
+        weight_decay: float = 1e-4,
+        label_smoothing: float = 0.0,
         image_size: int = 224,
     ):
         """
@@ -41,6 +45,8 @@ class ConvNextTrainer:
         self.pretrained = pretrained
         self.batch_size = batch_size
         self.lr = lr
+        self.weight_decay = weight_decay
+        self.label_smoothing = label_smoothing
         self.image_size = image_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -51,8 +57,10 @@ class ConvNextTrainer:
 
         self.model = ConvNextClassifier(pretrained=self.pretrained, model_name=self.model_name)
         self.model = self.model.to(self.device)
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.lr, weight_decay=1e-4)
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
+        self.optimizer = optim.AdamW(
+            self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay
+        )
 
     def get_transforms(self):
         train_transform = augmentations_mild.get_train_transforms(image_size=self.image_size)
@@ -156,22 +164,46 @@ class ConvNextTrainer:
         epoch_acc = correct / total
         return epoch_loss, epoch_acc
 
-    def train(self, epochs: int = 10):
+    def train(self, epochs: int = 10, patience: int = 15, note: str = ""):
 
         train_loader, val_loader = self.setup_dataloaders()
+
+        # Track both best accuracy (for saving) and best loss (for stopping)
         best_val_acc = 0.0
+        best_val_loss = float("inf")
+        epochs_no_improve = 0
+
+        # for plotting
+        history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "lr": []}
+
         save_path = (
             DEFAULT_WEIGHTS_DIR
-            / f"{self.model_name}_{str(self.pretrained)}_{self.batch_size}_{self.lr}_{self.image_size}.pt"
+            / f"{self.model_name}_{note}_{str(self.pretrained)}_{self.batch_size}_{self.lr}_{self.weight_decay}_{self.label_smoothing}_{self.image_size}.pt"
         )
 
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=epochs, eta_min=1e-6)
+
+        last_epoch = 0
+
         for epoch in range(1, epochs + 1):
+            last_epoch = epoch
             print(f"\nEpoch {epoch}/{epochs}")
 
             train_loss, train_acc = self.train_one_epoch(train_loader)
             val_loss, val_acc = self.validate(val_loader)
 
-            print(f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f}")
+            scheduler.step()
+            current_lr = scheduler.get_last_lr()[0]
+
+            history["train_loss"].append(train_loss)
+            history["val_loss"].append(val_loss)
+            history["train_acc"].append(train_acc)
+            history["val_acc"].append(val_acc)
+            history["lr"].append(current_lr)
+
+            print(
+                f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f} | LR: {current_lr:.6f}"
+            )
             print(f"Val Loss:   {val_loss:.4f} | Val Acc:   {val_acc:.4f}")
 
             if val_acc > best_val_acc:
@@ -181,8 +213,66 @@ class ConvNextTrainer:
                 )
                 torch.save(self.model.state_dict(), save_path)
 
+            # https://stackoverflow.com/questions/71998978/early-stopping-in-pytorch
+            if val_loss < best_val_loss:
+                #
+                best_val_loss = val_loss
+                epochs_no_improve = 0
+            else:
+                epochs_no_improve += 1
+                print(f"Early Stopping Counter: {epochs_no_improve} out of {patience}")
+
+            # stop training if patience is exceeded
+            if epochs_no_improve >= patience:
+                print(
+                    f"\nEarly stopping triggered. Validation loss has not improved in {epochs_no_improve} epochs."
+                )
+                break
+
+        self.create_plot(history, epochs_run=last_epoch, note=note)
+
+    def create_plot(self, history, epochs_run, note):
+        results_dir = PROJECT_ROOT / "animal_recognition" / "src" / "training" / "results"
+        results_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = results_dir / f"training_metrics_{self.model_name}_{note}_{timestamp}.png"
+
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
+
+        epochs_range = range(1, epochs_run + 1)
+
+        # Loss
+        ax1.plot(epochs_range, history["train_loss"], label="Train Loss")
+        ax1.plot(epochs_range, history["val_loss"], label="Val Loss")
+        ax1.set_title("Loss")
+        ax1.set_xlabel("Epochs")
+        ax1.set_ylabel("Loss")
+        ax1.legend()
+
+        # Accuracy
+        ax2.plot(epochs_range, history["train_acc"], label="Train Accuracy")
+        ax2.plot(epochs_range, history["val_acc"], label="Val Accuracy")
+        ax2.set_title("Accuracy")
+        ax2.set_xlabel("Epochs")
+        ax2.set_ylabel("Accuracy")
+        ax2.legend()
+
+        # Learning Rate
+        ax3.plot(epochs_range, history["lr"], label="Learning Rate", color="orange")
+        ax3.set_title("Learning Rate")
+        ax3.set_xlabel("Epochs")
+        ax3.set_ylabel("LR")
+        ax3.legend()
+
+        plt.tight_layout()
+        plt.savefig(filename)
+        plt.close()
+        print(f"Training graphs saved to {filename}")
+
 
 if __name__ == "__main__":
+    """
     trainer_baseline = ConvNextTrainer(
         model_name="convnext_tiny",
         pretrained=False,
@@ -191,30 +281,50 @@ if __name__ == "__main__":
         image_size=224,
     )
     trainer_baseline.train(epochs=80)
-
+    """
     trainer_pretrained = ConvNextTrainer(
         model_name="convnext_tiny",
         pretrained=True,
         batch_size=32,
         lr=1e-4,
+        weight_decay=0.05,
+        label_smoothing=0.1,
         image_size=224,
     )
-    trainer_pretrained.train(epochs=15)
+    trainer_pretrained.train(epochs=15, note="normal_res_pretrained")
 
     trainer_highres = ConvNextTrainer(
         model_name="convnext_small",
         pretrained=True,
         batch_size=16,  # not enough vram :/
-        lr=5e-5,
+        lr=5e-4,
+        weight_decay=0.05,
+        label_smoothing=0.1,
         image_size=384,
     )
-    trainer_highres.train(epochs=15)
+    trainer_highres.train(epochs=15, note="highres_pretrained")
 
     trainer_lowres = ConvNextTrainer(
         model_name="convnext_tiny",
         pretrained=True,
         batch_size=64,
         lr=2e-4,
+        weight_decay=0.05,
+        label_smoothing=0.1,
         image_size=128,
     )
-    trainer_lowres.train(epochs=5)
+    trainer_lowres.train(epochs=5, note = "lowres_pretrained")
+
+    trainer_cosine_annealing_scheduler = ConvNextTrainer(
+        model_name="convnext_tiny",
+        pretrained=False,
+        batch_size=32,
+        lr=2e-3,
+        weight_decay=0.05,
+        label_smoothing=0.1,
+        image_size=224,
+    )
+
+    trainer_cosine_annealing_scheduler.train(
+        epochs=150, patience=15, note="high_learning_rate_at_start"
+    )

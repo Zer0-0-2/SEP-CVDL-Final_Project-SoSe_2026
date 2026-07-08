@@ -34,7 +34,7 @@ class ConvNextTrainer:
     ):
         """
         Model names: "convnext_tiny", "convnext_small", "convnext_base", "convnext_large"
-        the first three have 224x224 input size, the last one has 384x384 input size (probably too large for compute resources)
+        the first three have 224x224 input size, the last one has 384x384 input size (probably too large for our compute resources)
         """
         self.data_dir = Path(data_dir)
         self.model_name = model_name

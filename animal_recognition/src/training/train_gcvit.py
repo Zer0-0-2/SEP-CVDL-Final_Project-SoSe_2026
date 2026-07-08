@@ -146,12 +146,12 @@ class GCViTTrainer:
         epoch_acc = correct / total
         return epoch_loss, epoch_acc
 
-    def train(self, epochs: int = 10):
+    def train(self, epochs: int = 10, note: str = ""):
         train_loader, val_loader = self.setup_dataloaders()
         best_val_acc = 0.0
         save_path = (
             DEFAULT_WEIGHTS_DIR
-            / f"{self.model_name}_{str(self.pretrained)}_{self.batch_size}_{self.lr}_{self.image_size}.pt"
+            / f"{self.model_name}_{str(self.pretrained)}_{self.batch_size}_{self.lr}_{self.image_size}_{note}.pt"
         )
 
         for epoch in range(1, epochs + 1):

@@ -32,7 +32,9 @@ class DetectorEvaluator:
         image_folder: Path = DEFAULT_IMAGE_FOLDER,
         models: list[str] = MODELS,
         confidence_thresholds: list[float] = CONFIDENCE_THRESHOLDS,
-        model_classes_indices: list[int] = [i for i in range(5)] # select which classes you want to have from compute_classes
+        model_classes_indices: list[int] = [
+            i for i in range(5)
+        ],  # select which classes you want to have from compute_classes
     ):
         self.image_folder = image_folder
         self.models = models
@@ -120,7 +122,7 @@ class DetectorEvaluator:
         classes = [all_classes[i] for i in self.model_classes_indices]
         indices = [all_indexes[i] for i in self.model_classes_indices]
 
-        return classes, indices 
+        return classes, indices
 
     def evaluate(
         self,
@@ -131,7 +133,7 @@ class DetectorEvaluator:
         df = pd.read_csv(labels_path)
 
         results = []
-        for model_name in MODELS:
+        for model_name in self.models:
             for single_class, cutoff in zip(self.classes_list, self.cutoff_indices_list):
                 model = yoloworld.YoloWorldDetector(
                     model_name=model_name,
@@ -139,23 +141,29 @@ class DetectorEvaluator:
                     reject_classes_index=cutoff,
                 )
                 cutoff_class = single_class[cutoff] if cutoff is not None else None
-                for confidence_threshold in CONFIDENCE_THRESHOLDS:
-                    logging.info(
-                        f"Evaluating detector with confidence threshold {confidence_threshold} and class set {single_class}, cutoff {cutoff_class} and model {model_name}"
+                logging.info(
+                    f"Evaluating model {model_name} with class set {single_class}, cutoff {cutoff_class} for multiple thresholds: {self.confidence_thresholds}"
+                )
+
+                y_true_list = []
+                y_pred_lists = {t: [] for t in self.confidence_thresholds}
+
+                for filename, label in df[["filename", "label"]].itertuples(index=False):
+                    expected = "catordog" if label != -1 else "notcatordog"
+                    y_true_list.append(expected)
+
+                    img_path = self.image_folder / filename
+                    preds_dict = model.predict_multiple_thresholds(
+                        img_path, confidence_thresholds=self.confidence_thresholds
                     )
 
-                    y_true_list = []
-                    y_pred_list = []
-                    for filename, label in df[["filename", "label"]].itertuples(index=False):
-                        expected = "catordog" if label != -1 else "notcatordog"
-                        predicted, _, _ = model.predict(
-                            self.image_folder / filename, confidence_threshold=confidence_threshold
-                        )
-
+                    for t in self.confidence_thresholds:
+                        predicted, _, _ = preds_dict[t]
                         catorodg = "catordog" if predicted is not None else "notcatordog"
+                        y_pred_lists[t].append(catorodg)
 
-                        y_true_list.append(expected)
-                        y_pred_list.append(catorodg)
+                for confidence_threshold in self.confidence_thresholds:
+                    y_pred_list = y_pred_lists[confidence_threshold]
 
                     tp = sum(
                         1
@@ -226,9 +234,42 @@ def main():
         filename=str(logging_path / "detector_eval.log"),
         level=logging.INFO,
     )
+    """
+    evaluator1 = DetectorEvaluator()
+    evaluator1.evaluate(
+        out_csv_path=PROJECT_ROOT / "evaluation_folder" / "detector" / "yoloworld_results_full.csv"
+    )
+    """
+    evaluator2 = DetectorEvaluator(
+        models=["yolov8l-worldv2.pt", "yolov8x-worldv2.pt"],
+        model_classes_indices=[0, 3],
+        confidence_thresholds=[
+            0.001,
+            0.01,
+            0.02,
+            0.03,
+            0.04,
+            0.05,
+            0.06,
+            0.07,
+            0.08,
+            0.09,
+            0.1,
+            0.125,
+            0.15,
+            0.175,
+            0.2,
+            0.25,
+        ],
+    )
 
-    evaluator = DetectorEvaluator()
-    evaluator.evaluate(out_csv_path=PROJECT_ROOT / "evaluation_folder" / "detector" / "yoloworld_results.csv")
+    evaluator2.evaluate(
+        out_csv_path=PROJECT_ROOT
+        / "evaluation_folder"
+        / "detector"
+        / "yoloworld_results_fine_grained.csv"
+    )
+
 
 if __name__ == "__main__":
     main()

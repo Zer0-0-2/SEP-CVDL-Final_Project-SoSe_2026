@@ -51,13 +51,14 @@ class YoloWorldDetector:
         model_classes: list[
             str
         ] = MODEL_CLASSES,  # usage: add custom model classes like above, but make sure that the accept classes are on top and reject on the bottom
-        reject_classes_index: int = CUTOFF,  # here you supply the index of the first reject class in model_classes. Everything >= will be considered reject class
+        reject_classes_index: int
+        | None = CUTOFF,  # here you supply the index of the first reject class in model_classes. Everything >= will be considered reject class
     ):
         self.model = YOLOWorld(model=animal_recog_dir / "models" / model_name, verbose=False)
         settings.update({"weights_dir": str(animal_recog_dir / "models" / "weights")})
         self.model.set_classes(model_classes)
+        self.reject_classes_index = reject_classes_index
         if reject_classes_index is not None:
-            
             self.valid_targets = [i for i in range(reject_classes_index)]
             self.invalid_targets = [i for i in range(reject_classes_index, len(model_classes))]
         else:
@@ -81,7 +82,10 @@ class YoloWorldDetector:
             for box in result.boxes:
                 cls_id = int(box.cls[0].item())
 
-                is_valid = cls_id in self.valid_targets and cls_id not in self.invalid_targets
+                if self.reject_classes_index is not None:
+                    is_valid = cls_id in self.valid_targets and cls_id not in self.invalid_targets
+                else:
+                    is_valid = cls_id in self.valid_targets
 
                 if is_valid:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()

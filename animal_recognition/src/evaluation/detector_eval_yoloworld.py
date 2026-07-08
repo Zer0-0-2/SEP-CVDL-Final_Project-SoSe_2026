@@ -12,7 +12,7 @@ import pandas as pd
 import animal_recognition.src.models.yoloworld as yoloworld
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 ANIMAL_RECOG_DIR = PROJECT_ROOT / "animal_recognition"
 
 DEFAULT_IMAGE_FOLDER = PROJECT_ROOT / "images"
@@ -258,9 +258,11 @@ def main():
     """
     evaluator1 = DetectorEvaluator()
     evaluator1.evaluate(
-        out_csv_path=PROJECT_ROOT / "evaluation" / "models" / "yoloworld_results_full.csv"
+        out_csv_path=PROJECT_ROOT / "animal_recognition" / "src" / "evaluation" / "yoloworld_results_full.csv"
     )
     """
+    
+    
     evaluator2 = DetectorEvaluator(
         models=["yolov8l-worldv2.pt", "yolov8x-worldv2.pt"],
         confidence_thresholds=[
@@ -285,8 +287,9 @@ def main():
 
     evaluator2.evaluate(
         out_csv_path=PROJECT_ROOT
+        / "animal_recognition"
+        / "src"
         / "evaluation"
-        / "models"
         / "yoloworld_results_full_more_thresholds.csv"
     )
 

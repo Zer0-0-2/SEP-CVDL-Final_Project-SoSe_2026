@@ -33,7 +33,7 @@ class DetectorEvaluator:
         models: list[str] = MODELS,
         confidence_thresholds: list[float] = CONFIDENCE_THRESHOLDS,
         model_classes_indices: list[int] = [
-            i for i in range(5)
+            i for i in range(6)
         ],  # select which classes you want to have from compute_classes
     ):
         self.image_folder = image_folder
@@ -116,8 +116,28 @@ class DetectorEvaluator:
             "tiger",
         ]
         index_4 = classes_4.index("tiger")
+
         all_classes.append(classes_4)
         all_indexes.append(index_4)
+
+        # all options without painting
+        classes_5 = [
+            "cat",
+            "dog",
+            "domestic cat",
+            "domestic dog",
+            "sphynx cat",
+            "bombay cat",
+            "birman cat",  # 6
+            "tiger",
+            "big tiger",
+            "fox",
+            "wolf",
+            "coyote",
+        ]
+        index_5 = classes_5.index("tiger")
+        all_classes.append(classes_5)
+        all_indexes.append(index_5)
 
         classes = [all_classes[i] for i in self.model_classes_indices]
         indices = [all_indexes[i] for i in self.model_classes_indices]
@@ -242,7 +262,6 @@ def main():
     """
     evaluator2 = DetectorEvaluator(
         models=["yolov8l-worldv2.pt", "yolov8x-worldv2.pt"],
-        model_classes_indices=[0, 3],
         confidence_thresholds=[
             0.001,
             0.01,
@@ -267,7 +286,7 @@ def main():
         out_csv_path=PROJECT_ROOT
         / "evaluation_folder"
         / "detector"
-        / "yoloworld_results_fine_grained.csv"
+        / "yoloworld_results_full_more_thresholds.csv"
     )
 
 

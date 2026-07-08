@@ -65,7 +65,7 @@ class YoloWorldDetector:
             self.valid_targets = [i for i in range(len(model_classes))]
             self.invalid_targets = []
 
-    def predict(self, img_path: Path, confidence_threshold: float = 0.25):
+    def predict(self, img_path: Path, confidence_threshold: float = 0.25, reject_on_invalid_class: bool = False):
         img = cv2.imread(str(img_path))
 
         if img is None:
@@ -83,6 +83,8 @@ class YoloWorldDetector:
                 cls_id = int(box.cls[0].item())
 
                 if self.reject_classes_index is not None:
+                    if reject_on_invalid_class and cls_id in self.invalid_targets:
+                        return None, None, None
                     is_valid = cls_id in self.valid_targets and cls_id not in self.invalid_targets
                 else:
                     is_valid = cls_id in self.valid_targets
@@ -155,7 +157,7 @@ class YoloWorldDetector:
         return res_dict
 
 
-### process_dataset and placeholder are old code, do not use them, use the class above instead.
+### DO NOT USE THESE process_dataset and placeholder are old code, do not use them, use the class above instead.
 def process_dataset(
     raw_dir: Path = animal_recog_dir / "data" / "raw",
     processed_dir: Path = animal_recog_dir / "data" / "processed_yoloworld",

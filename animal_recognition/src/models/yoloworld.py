@@ -62,7 +62,7 @@ class YoloWorldDetector:
             self.valid_targets = [i for i in range(reject_classes_index)]
             self.invalid_targets = [i for i in range(reject_classes_index, len(model_classes))]
         else:
-            self.valid_targets = model_classes
+            self.valid_targets = [i for i in range(len(model_classes))]
             self.invalid_targets = []
 
     def predict(self, img_path: Path, confidence_threshold: float = 0.25):

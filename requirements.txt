@@ -12,3 +12,4 @@ seaborn
 wandb
 gallery-dl
 logging
+timm

@@ -50,7 +50,7 @@ def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg, target_class: i
 
 
 if __name__ == "__main__":
-    parser = argparse.ArugmentParser(description= "Grad-CAM for classifier")
+    parser = argparse.ArgumentParser(description= "Grad-CAM for classifier")
     parser.add_argument("--config", type= Path, default = None)
     parser.add_argument("--image", type= Path, required= True)
     parser.add_argument("--checkpoint", type= Path, default= None)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     cfg = load_config(args.config) if args.config else load_config()
 
     num_classes = args.num_classes or cfg.classifier.num_classes
-    model = BaselineCNN(num_classes= cfg.classifier.num_classes)
+    model = BaselineCNN(num_classes= num_classes)
     if args.checkpoint is not None:
         model.load_state_dict(torch.load(args.checkpoint, map_location= "cpu"))
 

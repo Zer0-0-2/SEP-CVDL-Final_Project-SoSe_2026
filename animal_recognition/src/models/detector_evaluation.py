@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
+import logging
 import pandas as pd
-
 import animal_recognition.src.models.yoloworld as yoloworld
+
+
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -45,16 +46,17 @@ def evaluate_image_folder(
                 model_classes=single_class,
                 reject_classes_index=cutoff,
             )
+            cutoff_class = single_class[cutoff] if cutoff is not None else None
             for confidence_threshold in CONFIDENCE_THRESHOLDS:
                 logging.info(
-                    f"Evaluating detector with confidence threshold {confidence_threshold} and class set {single_class} and model {model_name}"
+                    f"Evaluating detector with confidence threshold {confidence_threshold} and class set {single_class}, cutoff {cutoff_class} and model {model_name}"
                 )
 
                 y_true_list = []
                 y_pred_list = []
                 for filename, label in df[["filename", "label"]].itertuples(index=False):
                     expected = "catordog" if label != -1 else "notcatordog"
-                    predicted, confidence, class_id = model.predict(
+                    predicted, _, _ = model.predict(
                         image_folder / filename, confidence_threshold=confidence_threshold
                     )
 
@@ -63,17 +65,53 @@ def evaluate_image_folder(
                     y_true_list.append(expected)
                     y_pred_list.append(catorodg)
 
-                correct = sum(
-                    expected == predicted for expected, predicted in zip(y_true_list, y_pred_list)
+                tp = sum(
+                    1
+                    for e, p in zip(y_true_list, y_pred_list)
+                    if e == "catordog" and p == "catordog"
+                )
+                tn = sum(
+                    1
+                    for e, p in zip(y_true_list, y_pred_list)
+                    if e == "notcatordog" and p == "notcatordog"
+                )
+                fp = sum(
+                    1
+                    for e, p in zip(y_true_list, y_pred_list)
+                    if e == "notcatordog" and p == "catordog"
+                )
+                fn = sum(
+                    1
+                    for e, p in zip(y_true_list, y_pred_list)
+                    if e == "catordog" and p == "notcatordog"
                 )
                 total = len(y_true_list)
-                accuracy = correct / total if total > 0 else 0
+                accuracy = (tp + tn) / total if total > 0 else 0
+
+                # technically we want to maximize the recall, since our second model in the pipeline wil handle the actual classification.
+                # the other metrics are just for information to make sure the given configuration is not too bad in tother regards.
+                recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+                precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+                f1_score = (
+                    2 * (precision * recall) / (precision + recall)
+                    if (precision + recall) > 0
+                    else 0
+                )
 
                 results.append(
                     {
+                        "model_name": model_name,
                         "class_set": str(single_class),
+                        "cutoff": cutoff_class,
                         "confidence_threshold": confidence_threshold,
                         "accuracy": accuracy,
+                        "true positive": tp,
+                        "true negative": tn,
+                        "false postivie": fp,
+                        "false negative": fn,
+                        "precision": precision,
+                        "recall": recall,
+                        "f1_score": f1_score,
                     }
                 )
 
@@ -99,7 +137,7 @@ def main():
 
     evaluate_image_folder(
         image_folder=DEFAULT_IMAGE_FOLDER,
-        out_csv_path=PROJECT_ROOT / "animal_recognition" / "data" / "evaluation_results.csv",
+        out_csv_path=PROJECT_ROOT / "evaluation_folder" / "detector" / "yoloworld_results.csv",
     )
 
 
@@ -169,7 +207,7 @@ def compute_classes():
         "tiger",
     ]
     index_5 = classes_5.index("tiger")
-    
+
     # add the classes and indexes here
     classes.append(classes_1)
     classes.append(classes_2)

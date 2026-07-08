@@ -32,18 +32,20 @@ class DetectorEvaluator:
         image_folder: Path = DEFAULT_IMAGE_FOLDER,
         models: list[str] = MODELS,
         confidence_thresholds: list[float] = CONFIDENCE_THRESHOLDS,
+        model_classes_indices: list[int] = [i for i in range(5)] # select which classes you want to have from compute_classes
     ):
         self.image_folder = image_folder
         self.models = models
         self.confidence_thresholds = confidence_thresholds
+        self.model_classes_indices = model_classes_indices
         self.classes_list, self.cutoff_indices_list = self.compute_classes()
 
     def compute_classes(self):
-        classes = []
-        indexes = []
+        all_classes = []
+        all_indexes = []
 
         # All options
-        classes_1 = [
+        classes_0 = [
             "cat",
             "dog",
             "domestic cat",
@@ -59,65 +61,66 @@ class DetectorEvaluator:
             "drawing",
             "painting",
         ]
-        index_1 = classes_1.index("tiger")
+        index_0 = classes_0.index("tiger")
+        all_classes.append(classes_0)
+        all_indexes.append(index_0)
 
         # most barebones
-        classes_2 = [
+        classes_1 = [
             "cat",
             "dog",
         ]
-        index_2 = None
+        index_1 = None
+        all_classes.append(classes_1)
+        all_indexes.append(index_1)
 
         # only anmals
-        classes_3 = [
+        classes_2 = [
             "cat",
             "dog",
             "tiger",
         ]
-        index_3 = classes_3.index("tiger")
+        index_2 = classes_2.index("tiger")
+        all_classes.append(classes_2)
+        all_indexes.append(index_2)
 
         # no breeds
+        classes_3 = [
+            "cat",
+            "dog",
+            "domestic cat",
+            "domestic dog",
+            "tiger",
+            "big tiger",
+            "fox",
+            "wolf",
+            "coyote",
+            "drawing",
+            "painting",
+        ]
+        index_3 = classes_3.index("tiger")
+        all_classes.append(classes_3)
+        all_indexes.append(index_3)
+
+        # test only with difficoult breeds
         classes_4 = [
             "cat",
             "dog",
             "domestic cat",
             "domestic dog",
-            "tiger",
-            "big tiger",
-            "fox",
-            "wolf",
-            "coyote",
-            "drawing",
-            "painting",
-        ]
-        index_4 = classes_4.index("tiger")
-
-        # test only with difficoult breeds
-        classes_5 = [
-            "cat",
-            "dog",
-            "domestic cat",
-            "domestic dog",
             "sphynx cat",
             "bombay cat",
             "birman cat",  # 6
             "tiger",
         ]
-        index_5 = classes_5.index("tiger")
+        index_4 = classes_4.index("tiger")
+        all_classes.append(classes_4)
+        all_indexes.append(index_4)
 
-        # add the classes and indexes here
-        classes.append(classes_1)
-        classes.append(classes_2)
-        classes.append(classes_3)
-        classes.append(classes_4)
-        classes.append(classes_5)
+        classes = [all_classes[i] for i in self.model_classes_indices]
+        indices = [all_indexes[i] for i in self.model_classes_indices]
 
-        indexes.append(index_1)
-        indexes.append(index_2)
-        indexes.append(index_3)
-        indexes.append(index_4)
-        indexes.append(index_5)
-        return classes, indexes
+        return classes, indices 
 
     def evaluate(
         self,

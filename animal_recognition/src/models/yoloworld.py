@@ -105,7 +105,54 @@ class YoloWorldDetector:
         else:
             return None, None, None
 
-        return None, None, None
+    def predict_multiple_thresholds(self, img_path: Path, confidence_thresholds: list[float]):
+        img = cv2.imread(str(img_path))
+
+        res_dict: dict[float, tuple] = {t: (None, None, None) for t in confidence_thresholds}
+
+        if img is None:
+            return res_dict
+
+        min_conf = min(confidence_thresholds)
+        results = self.model(img, conf=min_conf, verbose=False)
+
+        for t in confidence_thresholds:
+            largest_area = 0
+            best_box = None
+            best_box_confidence = 0
+            best_cls_id = None
+
+            for result in results:
+                for box in result.boxes:
+                    confidence = box.conf[0].item()
+                    if confidence < t:
+                        continue
+
+                    cls_id = int(box.cls[0].item())
+
+                    if self.reject_classes_index is not None:
+                        is_valid = (
+                            cls_id in self.valid_targets and cls_id not in self.invalid_targets
+                        )
+                    else:
+                        is_valid = cls_id in self.valid_targets
+
+                    if is_valid:
+                        x1, y1, x2, y2 = box.xyxy[0].tolist()
+                        area = (x2 - x1) * (y2 - y1)
+
+                        if area > largest_area:
+                            largest_area = area
+                            best_box = (int(x1), int(y1), int(x2), int(y2))
+                            best_cls_id = cls_id
+                            best_box_confidence = confidence
+
+            if best_box is not None:
+                x1, y1, x2, y2 = best_box
+                cropped = img[y1:y2, x1:x2]
+                res_dict[t] = (cropped, best_box_confidence, best_cls_id)
+
+        return res_dict
 
 
 ### process_dataset and placeholder are old code, do not use them, use the class above instead.

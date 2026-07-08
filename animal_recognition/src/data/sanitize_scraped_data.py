@@ -39,8 +39,8 @@ def main(
     reject_classes_index: int = DEFAULT_REJECT_CLASSES_INDEX,
     confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
 ):
-    accepted = image_folder / ".." / "accepted"
-    rejected = image_folder / ".." / "rejected"
+    accepted = image_folder / ".." / "processed" / "accepted"
+    rejected = image_folder / ".." / "processed" / "rejected"
 
     if not accepted.exists():
         accepted.mkdir(parents=True, exist_ok=True)
@@ -67,7 +67,9 @@ def main(
             if not image_file.is_file():
                 continue
             cropped, confidence, class_id = model.predict(
-                image_file, confidence_threshold=confidence_threshold, reject_on_invalid_class=True
+                image_file, 
+                confidence_threshold=confidence_threshold, 
+                reject_on_invalid_class=True, 
             )
             if cropped is None:
                 logging.info(

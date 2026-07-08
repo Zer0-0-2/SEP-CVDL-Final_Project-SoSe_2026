@@ -65,13 +65,13 @@ class YoloWorldDetector:
             self.valid_targets = [i for i in range(len(model_classes))]
             self.invalid_targets = []
 
-    def predict(self, img_path: Path, confidence_threshold: float = 0.25, reject_on_invalid_class: bool = False):
+    def predict(self, img_path: Path, confidence_threshold: float = 0.25, reject_on_invalid_class: bool = False, **kwargs):
         img = cv2.imread(str(img_path))
 
         if img is None:
             return None, None, None
 
-        results = self.model(img, conf=confidence_threshold, verbose=False)
+        results = self.model(img, conf=confidence_threshold, verbose=False, **kwargs)
 
         largest_area = 0
         best_box = None

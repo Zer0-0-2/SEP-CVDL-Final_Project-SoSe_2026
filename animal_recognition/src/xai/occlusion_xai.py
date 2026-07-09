@@ -61,3 +61,31 @@ def run_occlusion(model: torch.nn.Module, image: Image.Image, cfg, target_class:
     visualization = np.uint8(255 * visualization)
 
     return visualization, predicted_class, used_target
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description= "Occlusion Sensetivity for the Classifier")
+    parser.add_argument("--config", type= Path, default= None)
+    parser.add_argument("--image", type= Path, required= True)
+    parser.add_argument("--checkpoint", type= Path, default= None)
+    parser.add_argument("--num-classes", type= int, default= None)
+    parser.add_argument("--target-class", type= int, default=None)
+    parser.add_argument("--patch-size", type= int, default= None)
+    parser.add_argument("--stride", type= int, default= None)
+    parser.add_argument("--output", type= Path, default= Path("occlusion_output.png"))
+    args = parser.parse_args
+
+    cfg = load_config(args.config) if args.config else load_config()
+
+    num_classes = args.num_classes or cfg.classifier.num_classes
+    model = BaselineCNN(num_classes= num_classes)
+    if args.checkpoint is not None:
+        model.load_state_dict(torch.load(args.checkpoint, map_location= "cpu"))
+
+    image = Image.open(args.image).convert("RGB")
+
+    visualization, predicted_class, used_target = run_occlusion(model, image, cfg, target_class= args.target_class, patch_size= args.patch_size, stride= args.stride,)
+
+    print(f"Predicted class: {predicted_class}")
+    print(f"Sensetivity map generated for {used_target}")
+    plt.imsave(args.output, visualization)
+    print(f"saved visualization to: {args.output}")

@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from timm.scheduler import Scheduler
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
+
+# Import the specific scheduler class directly
+from timm.scheduler import cosine_lr
 
 import animal_recognition.src.data.augmentations as augmentations
 import animal_recognition.src.data.augmentations_mild as augmentations_mild
@@ -35,7 +37,7 @@ class ClassifierTrainer:
         label_smoothing: float = 0.0,
         image_size: int = 224,
         augmentation_file: str = "vetted",
-        scheduler: Scheduler = None,
+        scheduler=None,
     ):
         """
         architecture: "convnext" or "gcvit"
@@ -91,9 +93,7 @@ class ClassifierTrainer:
             raise ValueError(f"Unknown augmentation strategy: '{self.augmentation_file}'")
 
         aug_module = aug_modules[self.augmentation_file]
-
         train_transform = aug_module.get_train_transforms(image_size=self.image_size)
-
         val_transform = aug_module.get_val_transforms(image_size=self.image_size)
 
         return train_transform, val_transform
@@ -110,7 +110,6 @@ class ClassifierTrainer:
             raise ValueError(f"No images found in {self.data_dir}. Run sanitize_scraped_data.py")
 
         val_size = int(0.2 * total_size)
-
         train_size = total_size - val_size
 
         generator = torch.Generator().manual_seed(67)
@@ -204,17 +203,18 @@ class ClassifierTrainer:
         # for plotting
         history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "lr": []}
 
-        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_file}_sd{self.scheduler.__class__.__name__ if self.scheduler is not None else 'None'}"
+        # TODO: fix this somewhat whacky implementation, works for now
+        if self.scheduler is not None:
+            scheduler = self.scheduler
+        else:
+            scheduler = None
+
+        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_file}_sched{self.scheduler.__class__.__name__ if self.scheduler is not None else 'None'}"
 
         print(f"Training with parameters: {params_str}")
         save_path = (
             DEFAULT_WEIGHTS_DIR / f"{self.architecture}_{self.model_name}_{note}_{params_str}.pt"
         )
-
-        if self.scheduler is not None:
-            scheduler = self.scheduler
-        else:
-            scheduler = None
 
         last_epoch = 0
 
@@ -225,11 +225,12 @@ class ClassifierTrainer:
             train_loss, train_acc = self.train_one_epoch(train_loader)
             val_loss, val_acc = self.validate(val_loader)
 
+            # Step the timm scheduler with the epoch number
             if scheduler is not None:
-                scheduler.step()
-                current_lr = scheduler.get_last_lr()[0]
-            else:
-                current_lr = self.lr
+                scheduler.step(epoch)
+
+            # Extract LR straight from the optimizer parameter groups
+            current_lr = self.optimizer.param_groups[0]["lr"]
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
@@ -318,6 +319,7 @@ if __name__ == "__main__":
         label_smoothing=0.2,
         image_size=224,
         augmentation_file="vetted",
+        scheduler=
     )
 
     trainer_scratch_optimized.train(

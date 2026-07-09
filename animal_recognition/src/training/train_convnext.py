@@ -37,6 +37,7 @@ class ConvNextTrainer:
         weight_decay: float = 1e-4,
         label_smoothing: float = 0.0,
         image_size: int = 224,
+        augmentation_strategy: str = "vetted",
     ):
         """
         Model names: "convnext_tiny", "convnext_small", "convnext_base", "convnext_large"
@@ -50,6 +51,7 @@ class ConvNextTrainer:
         self.weight_decay = weight_decay
         self.label_smoothing = label_smoothing
         self.image_size = image_size
+        self.augmentation_strategy = augmentation_strategy
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         DEFAULT_WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -65,8 +67,19 @@ class ConvNextTrainer:
         )
 
     def get_transforms(self):
-        train_transform = augmentations_vetted.get_train_transforms(image_size=self.image_size)
-        val_transform = augmentations_vetted.get_val_transforms(image_size=self.image_size)
+        aug_modules = {
+            "mild": augmentations_mild,
+            "base": augmentations,
+            "vetted": augmentations_vetted,
+        }
+
+        if self.augmentation_strategy not in aug_modules:
+            raise ValueError(f"Unknown augmentation strategy: '{self.augmentation_strategy}'")
+
+        aug_module = aug_modules[self.augmentation_strategy]
+
+        train_transform = aug_module.get_train_transforms(image_size=self.image_size)
+        val_transform = aug_module.get_val_transforms(image_size=self.image_size)
 
         return train_transform, val_transform
 
@@ -178,10 +191,8 @@ class ConvNextTrainer:
         # for plotting
         history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "lr": []}
 
-        save_path = (
-            DEFAULT_WEIGHTS_DIR
-            / f"{self.model_name}_{note}_{str(self.pretrained)}_{self.batch_size}_{self.lr}_{self.weight_decay}_{self.label_smoothing}_{self.image_size}.pt"
-        )
+        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_strategy}"
+        save_path = DEFAULT_WEIGHTS_DIR / f"{self.model_name}_{note}_{params_str}.pt"
 
         scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=epochs, eta_min=1e-6)
 
@@ -231,14 +242,16 @@ class ConvNextTrainer:
                 )
                 break
 
-        self.create_plot(history, epochs_run=last_epoch, note=note)
+        self.create_plot(history, epochs_run=last_epoch, note=note, params_str=params_str)
 
-    def create_plot(self, history, epochs_run, note):
+    def create_plot(self, history, epochs_run, note, params_str):
         results_dir = PROJECT_ROOT / "animal_recognition" / "src" / "training" / "results"
         results_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = results_dir / f"training_metrics_{self.model_name}_{note}_{timestamp}.png"
+        filename = (
+            results_dir / f"training_metrics_{self.model_name}_{note}_{params_str}_{timestamp}.png"
+        )
 
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
 
@@ -331,30 +344,18 @@ if __name__ == "__main__":
     )
     """
 
-    trainer_base_stable = ConvNextTrainer(
-        model_name="convnext_base",
-        pretrained=True,
-        batch_size=32,
-        lr=1e-4,
-        weight_decay=0.05,
-        label_smoothing=0.1,
-        image_size=384,
-    )
-
-    trainer_base_stable.train(epochs=20, note="small_stable")
-
     trainer_scratch_optimized = ConvNextTrainer(
-        model_name="convnext_tiny",
+        model_name="convnext_small",
         pretrained=False,
         batch_size=32,
         lr=3e-3,
         weight_decay=0.05,
-        label_smoothing=0.2,  # Increased to prevent overconfidence
+        label_smoothing=0.2,  # increased from previous attempt
         image_size=224,
+        augmentation_strategy="vetted",
     )
 
     trainer_scratch_optimized.train(
         epochs=150,
-        patience=20,  # Increased patience because strong augmentations cause jumpy validation loss
-        note="strong_aug_warmup",
+        note="aug_val_warmup",
     )

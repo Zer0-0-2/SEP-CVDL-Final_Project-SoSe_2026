@@ -11,6 +11,7 @@ matplotlib
 seaborn
 wandb
 gallery-dl
+captum
 logging
 timm
 captum

@@ -18,8 +18,8 @@ metrics.
     python inference.py --image-folder <folder>
 """
 
-# example usage: 
-# 
+# example usage:
+#
 # python -m animal_recognition.src.evaluation.inference --classifier-type convnext --weights-path animal_recognition/models/weights/convnext_tiny_False_32_0.001_224.pt
 #
 
@@ -38,6 +38,9 @@ import torch.nn as nn
 from PIL import Image
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from tqdm import tqdm
+
+import animal_recognition.src.data.augmentations_mild as augmentations_mild
+import animal_recognition.src.data.augmentations as augmentations
 
 import numpy as np
 import torchvision.transforms as transforms
@@ -75,19 +78,20 @@ class Model(nn.Module):
     def __init__(
         self,
         weights_path: Path,
-        classifier_type: str = "convnext",
+        classifier: str = "convnext",
+        classifier_type: str = "convnext_tiny",
     ):
         super().__init__()
 
         # use yoloworld with the default values (which are already analyzed to be best on test dataset)
         self.detector = YoloWorldDetector()
 
-        if classifier_type == "convnext":
-            self.classifier = ConvNextClassifier(pretrained=False)
-        elif classifier_type == "gcvit":
-            self.classifier = GCViTClassifier(pretrained=False)
+        if classifier == "convnext":
+            self.classifier = ConvNextClassifier(pretrained=False, model_name=classifier_type)
+        elif classifier == "gcvit":
+            self.classifier = GCViTClassifier(pretrained=False, model_name=classifier_type)
         else:
-            raise ValueError(f"Unsupported classifier_type: {classifier_type}")
+            raise ValueError(f"Unsupported classifier: {classifier}")
 
         self.weights_path = Path(weights_path)
 
@@ -98,15 +102,15 @@ class Model(nn.Module):
 
         self.classifier.eval()
 
-        self.transform = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.Resize(236, interpolation=transforms.InterpolationMode.BILINEAR),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
+        try:
+            res_str = weights_path.stem.split("_")[-1]
+            self.image_size = int(res_str)
+        except ValueError:
+            self.image_size = 224  # Fallback
+            print(
+                f"Warning: Could not parse resolution from {weights_path.stem}. Defaulting to 224."
+            )
+        self.transform = augmentations.get_val_transforms(image_size=self.image_size)
 
     def forward(self, image: Image.Image) -> int:
         # temporary solution
@@ -126,7 +130,7 @@ class Model(nn.Module):
 
         cropped_np = cropped_np[:, :, ::-1]
 
-        input_tensor = self.transform(cropped_np).unsqueeze(0)
+        input_tensor = self.transform(image=cropped_np)["image"].unsqueeze(0)
 
         device = next(self.classifier.parameters()).device
         input_tensor = input_tensor.to(device)
@@ -145,15 +149,24 @@ if __name__ == "__main__":
         default="animal_recognition/models/weights/convnext.pth",
     )
     parser.add_argument(
-        "--classifier-type",
+        "--classifier",
         type=str,
         default="convnext",
-        choices=["convnext", "gcvit"],
+    )
+    parser.add_argument(
+        "--classifier-type",
+        type=str,
+        default="convnext_tiny",
+        # TODO: Add gcvit options once training is fully implemented
     )
     args = parser.parse_args()
 
     df = pd.read_csv(args.image_folder / "labels.csv")
-    model = Model(weights_path=args.weights_path, classifier_type=args.classifier_type).eval()
+    model = Model(
+        weights_path=args.weights_path,
+        classifier=args.classifier,
+        classifier_type=args.classifier_type,
+    ).eval()
 
     y_true, y_pred = [], []
     with torch.no_grad():

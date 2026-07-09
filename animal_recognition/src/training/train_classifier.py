@@ -1,49 +1,46 @@
-import argparse
 import logging
-from pathlib import Path
 from datetime import datetime
-import matplotlib.pyplot as plt
+from pathlib import Path
 
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split, Subset
+from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
-
+import animal_recognition.src.data.augmentations as augmentations
+import animal_recognition.src.data.augmentations_mild as augmentations_mild
+import animal_recognition.src.data.augmentations_vetted as augmentations_vetted
 from animal_recognition.src.data.dataset import AnimalDataset
 from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
-
-import animal_recognition.src.data.augmentations_mild as augmentations_mild
-import animal_recognition.src.data.augmentations as augmentations
-import animal_recognition.src.data.augmentations_vetted as augmentations_vetted
-
+from animal_recognition.src.models.classifier_gcvit import GCViTClassifier
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 DEFAULT_DATA_DIR = PROJECT_ROOT / "animal_recognition" / "data" / "processed" / "accepted"
 DEFAULT_WEIGHTS_DIR = PROJECT_ROOT / "animal_recognition" / "models" / "weights"
 
 
-class ConvNextTrainer:
+class ClassifierTrainer:
     def __init__(
         self,
+        architecture: str,
+        model_name: str,
         data_dir: Path = DEFAULT_DATA_DIR,
-        model_name: str = "convnext_tiny",
         pretrained: bool = True,
         batch_size: int = 32,
         lr: float = 0.01,
         weight_decay: float = 1e-4,
         label_smoothing: float = 0.0,
         image_size: int = 224,
-        augmentation_strategy: str = "vetted",
+        augmentation_file: str = "vetted",
     ):
         """
-        Model names: "convnext_tiny", "convnext_small", "convnext_base", "convnext_large"
-        the first three have 224x224 input size, the last one has 384x384 input size (probably too large for our compute resources)
+        architecture: "convnext" or "gcvit"
+        model_name: see classifier_convnext.py or classifier_gcvit.py for timm output
         """
-        self.data_dir = Path(data_dir)
+        self.architecture = architecture
+        self.data_dir = data_dir
         self.model_name = model_name
         self.pretrained = pretrained
         self.batch_size = batch_size
@@ -51,15 +48,28 @@ class ConvNextTrainer:
         self.weight_decay = weight_decay
         self.label_smoothing = label_smoothing
         self.image_size = image_size
-        self.augmentation_strategy = augmentation_strategy
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.augmentation_file = augmentation_file
+        self.device = torch.device(
+            torch.cuda.get_device_name(torch.cuda.current_device())
+            if torch.cuda.is_available()
+            else "cpu"
+        )
 
         DEFAULT_WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
+
         print(f"Using device: {self.device}")
         print(f"Data Directory: {self.data_dir}")
-        print(f"Model: {self.model_name} (Pretrained: {self.pretrained})")
+        print(
+            f"Architecture: {self.architecture} | Model: {self.model_name} (Pretrained: {self.pretrained})"
+        )
 
-        self.model = ConvNextClassifier(pretrained=self.pretrained, model_name=self.model_name)
+        if self.architecture == "convnext":
+            self.model = ConvNextClassifier(pretrained=self.pretrained, model_name=self.model_name)
+        elif self.architecture == "gcvit":
+            self.model = GCViTClassifier(pretrained=self.pretrained, model_name=self.model_name)
+        else:
+            raise ValueError(f"Wrong architecture: {self.architecture}")
+
         self.model = self.model.to(self.device)
         self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
         self.optimizer = optim.AdamW(
@@ -73,12 +83,13 @@ class ConvNextTrainer:
             "vetted": augmentations_vetted,
         }
 
-        if self.augmentation_strategy not in aug_modules:
-            raise ValueError(f"Unknown augmentation strategy: '{self.augmentation_strategy}'")
+        if self.augmentation_file not in aug_modules:
+            raise ValueError(f"Unknown augmentation strategy: '{self.augmentation_file}'")
 
-        aug_module = aug_modules[self.augmentation_strategy]
+        aug_module = aug_modules[self.augmentation_file]
 
         train_transform = aug_module.get_train_transforms(image_size=self.image_size)
+
         val_transform = aug_module.get_val_transforms(image_size=self.image_size)
 
         return train_transform, val_transform
@@ -91,8 +102,11 @@ class ConvNextTrainer:
         full_dataset_val = AnimalDataset(self.data_dir, transform=val_transform)
 
         total_size = len(full_dataset_train)
+        if total_size == 0:
+            raise ValueError(f"No images found in {self.data_dir}. Run sanitize_scraped_data.py")
 
         val_size = int(0.2 * total_size)
+
         train_size = total_size - val_size
 
         generator = torch.Generator().manual_seed(67)
@@ -106,7 +120,6 @@ class ConvNextTrainer:
 
         print(f"Dataset split: {train_size} training images, {val_size} validation images")
 
-        # persisten_workers = True to avoid no such file or directory error
         train_loader = DataLoader(
             train_dataset,
             batch_size=self.batch_size,
@@ -131,7 +144,6 @@ class ConvNextTrainer:
         correct = 0
         total = 0
 
-        # Progress bar, techniaclly not needed
         pbar = tqdm(dataloader, desc="Training")
         for images, labels in pbar:
             images, labels = images.to(self.device), labels.to(self.device)
@@ -160,9 +172,6 @@ class ConvNextTrainer:
         correct = 0
         total = 0
 
-        ## https://tqdm.github.io/
-
-        ## simlar to https://adamoudad.github.io/posts/progress_bar_with_tqdm/
         pbar = tqdm(dataloader, desc="Validation")
         for images, labels in pbar:
             images, labels = images.to(self.device), labels.to(self.device)
@@ -191,8 +200,10 @@ class ConvNextTrainer:
         # for plotting
         history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "lr": []}
 
-        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_strategy}"
-        save_path = DEFAULT_WEIGHTS_DIR / f"{self.model_name}_{note}_{params_str}.pt"
+        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_file}"
+        save_path = (
+            DEFAULT_WEIGHTS_DIR / f"{self.architecture}_{self.model_name}_{note}_{params_str}.pt"
+        )
 
         scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=epochs, eta_min=1e-6)
 
@@ -226,16 +237,13 @@ class ConvNextTrainer:
                 )
                 torch.save(self.model.state_dict(), save_path)
 
-            # https://stackoverflow.com/questions/71998978/early-stopping-in-pytorch
             if val_loss < best_val_loss:
-                #
                 best_val_loss = val_loss
                 epochs_no_improve = 0
             else:
                 epochs_no_improve += 1
                 print(f"Early Stopping Counter: {epochs_no_improve} out of {patience}")
 
-            # stop training if patience is exceeded
             if epochs_no_improve >= patience:
                 print(
                     f"\nEarly stopping triggered. Validation loss has not improved in {epochs_no_improve} epochs."
@@ -250,7 +258,8 @@ class ConvNextTrainer:
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = (
-            results_dir / f"training_metrics_{self.model_name}_{note}_{params_str}_{timestamp}.png"
+            results_dir
+            / f"training_metrics_{self.architecture}_{self.model_name}_{note}_{params_str}_{timestamp}.png"
         )
 
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
@@ -287,72 +296,16 @@ class ConvNextTrainer:
 
 
 if __name__ == "__main__":
-    """
-    trainer_baseline = ConvNextTrainer(
-        model_name="convnext_tiny",
-        pretrained=False,
-        batch_size=32,
-        lr=1e-3,
-        image_size=224,
-    )
-    trainer_baseline.train(epochs=80)
-    trainer_pretrained = ConvNextTrainer(
-        model_name="convnext_tiny",
-        pretrained=True,
-        batch_size=32,
-        lr=1e-4,
-        weight_decay=0.05,
-        label_smoothing=0.1,
-        image_size=224,
-    )
-    trainer_pretrained.train(epochs=15, note="normal_res_pretrained")
-
-    trainer_highres = ConvNextTrainer(
-        model_name="convnext_small",
-        pretrained=True,
-        batch_size=16,  # not enough vram :/
-        lr=5e-4,
-        weight_decay=0.05,
-        label_smoothing=0.1,
-        image_size=384,
-    )
-    trainer_highres.train(epochs=15, note="highres_pretrained")
-
-    trainer_lowres = ConvNextTrainer(
-        model_name="convnext_tiny",
-        pretrained=True,
-        batch_size=64,
-        lr=2e-4,
-        weight_decay=0.05,
-        label_smoothing=0.1,
-        image_size=128,
-    )
-    trainer_lowres.train(epochs=5, note = "lowres_pretrained")
-
-    trainer_cosine_annealing_scheduler = ConvNextTrainer(
-        model_name="convnext_tiny",
-        pretrained=False,
-        batch_size=32,
-        lr=2e-3,
-        weight_decay=0.05,
-        label_smoothing=0.1,
-        image_size=224,
-    )
-
-    trainer_cosine_annealing_scheduler.train(
-        epochs=150, patience=15, note="high_learning_rate_at_start"
-    )
-    """
-
-    trainer_scratch_optimized = ConvNextTrainer(
+    trainer_scratch_optimized = ClassifierTrainer(
+        architecture="convnext",
         model_name="convnext_small",
         pretrained=False,
         batch_size=32,
         lr=3e-3,
         weight_decay=0.05,
-        label_smoothing=0.2,  # increased from previous attempt
+        label_smoothing=0.2,
         image_size=224,
-        augmentation_strategy="vetted",
+        augmentation_file="vetted",
     )
 
     trainer_scratch_optimized.train(

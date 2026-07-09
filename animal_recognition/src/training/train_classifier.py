@@ -316,60 +316,64 @@ class ClassifierTrainer:
 if __name__ == "__main__":
     # use this more compact and modular syntax from now on
 
-    model0 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
+    model_0 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
-    optimizer0 = optim.AdamW(model0.parameters(), lr=1e-4, weight_decay=5e-4)
+    optimizer_0 = optim.AdamW(model_0.parameters(), lr=1e-4, weight_decay=5e-4)
 
     # https://timm.fast.ai/SGDR
-    scheduler = cosine_lr.CosineLRScheduler(
-        optimizer0,
+    scheduler_0 = cosine_lr.CosineLRScheduler(
+        optimizer_0,
         t_initial=140,  # number of epochs PER CYCLE -_-
         lr_min=1e-6,
         warmup_t=10,
         warmup_lr_init=1e-5,
     )
 
-    trainer_scratch_optimized0 = ClassifierTrainer(
-        model=model0,
-        optimizer=optimizer0,
-        scheduler=scheduler,
+    trainer_scratch_optimized_0 = ClassifierTrainer(
+        model=model_0,
+        optimizer=optimizer_0,
+        scheduler=scheduler_0,
         batch_size=32,
         label_smoothing=0.2,
         image_size=224,
         augmentation_file="vetted",
     )
 
-    trainer_scratch_optimized0.train(
+    trainer_scratch_optimized_0.train(
         epochs=150,
         note="cosinelr_with_warmup",
     )
 
-    model = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
+    # delete after run and before
+    del model_0, optimizer_0, scheduler_0, trainer_scratch_optimized_0
+    torch.cuda.empty_cache()
+
+    model_1 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
     # separate parameters for weight decay
     # https://arxiv.org/pdf/2301.00808
-    decay = []
-    no_decay = []
-    for name, param in model.named_parameters():
+    decay_1 = []
+    no_decay_1 = []
+    for name, param in model_1.named_parameters():
         if not param.requires_grad:
             continue
         # Exclude GRN gamma (weight) and beta (bias) from weight decay
         if "grn" in name and (
             "weight" in name or "bias" in name or "gamma" in name or "beta" in name
         ):
-            no_decay.append(param)
+            no_decay_1.append(param)
         else:
-            decay.append(param)
+            decay_1.append(param)
 
     # weight decay between 1e-4 and 1e-3
-    optimizer = optim.AdamW(
-        [{"params": decay, "weight_decay": 5e-4}, {"params": no_decay, "weight_decay": 0.0}],
+    optimizer_1 = optim.AdamW(
+        [{"params": decay_1, "weight_decay": 5e-4}, {"params": no_decay_1, "weight_decay": 0.0}],
         lr=1e-4,
     )
 
     # https://timm.fast.ai/SGDR
-    scheduler = cosine_lr.CosineLRScheduler(
-        optimizer,
+    scheduler_1 = cosine_lr.CosineLRScheduler(
+        optimizer_1,
         t_initial=140,  # number of epochs PER CYCLE -_-
         lr_min=1e-6,
         warmup_t=10,
@@ -377,17 +381,17 @@ if __name__ == "__main__":
         warmup_prefix=True,
     )
 
-    trainer_scratch_optimized = ClassifierTrainer(
-        model=model,
-        optimizer=optimizer,
-        scheduler=scheduler,
+    trainer_scratch_optimized_1 = ClassifierTrainer(
+        model=model_1,
+        optimizer=optimizer_1,
+        scheduler=scheduler_1,
         batch_size=32,
         label_smoothing=0.2,
         image_size=224,
         augmentation_file="vetted",
     )
 
-    trainer_scratch_optimized.train(
+    trainer_scratch_optimized_1.train(
         epochs=150,
         note="cosinelr_with_warmup_optimized_weight_decay",
     )

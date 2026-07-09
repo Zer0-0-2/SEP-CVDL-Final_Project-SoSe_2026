@@ -21,6 +21,10 @@ class GCViTClassifier(nn.Module):
             model_name, pretrained=pretrained, num_classes=self.num_classes
         )
 
+        self.architecture = "gcvit"
+        self.model_name = model_name
+        self.pretrained = pretrained
+
     def forward(self, x: torch.Tensor):
         return self.model(x)
 

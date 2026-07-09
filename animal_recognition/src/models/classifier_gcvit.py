@@ -11,8 +11,8 @@ import animal_recognition.src.data.dataset as animal_dataset
 class GCViTClassifier(nn.Module):
     def __init__(self, pretrained: bool = False, model_name: str = "gcvit_tiny"):
         """
-        Model names: "gcvit_tiny", "gcvit_small", "gcvit_base", etc.
-        By default, gcvit takes 224x224 input sizes.
+        timm.list_models() output
+        ['gcvit_base', 'gcvit_small', 'gcvit_tiny', 'gcvit_xtiny', 'gcvit_xxtiny']
         """
         super().__init__()
         self.num_classes = len(animal_dataset.CLASSES)

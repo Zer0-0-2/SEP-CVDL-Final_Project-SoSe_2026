@@ -224,7 +224,7 @@ class ClassifierTrainer:
 
         print(f"Training with parameters: {params_str}")
         save_path = (
-            DEFAULT_WEIGHTS_DIR / f"{self.architecture}_{self.model_name}_{note}_{params_str}.pt"
+            DEFAULT_WEIGHTS_DIR / f"{self.model_name}_{note}_{params_str}.pt"
         )
 
         last_epoch = 0
@@ -323,12 +323,12 @@ if __name__ == "__main__":
     # use this more compact and modular syntax from now on
     model = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
-    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.05)
+    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=5e-4)
 
     # https://timm.fast.ai/SGDR
     scheduler = cosine_lr.CosineLRScheduler(
         optimizer,
-        t_initial=150,  # number of epochs PER CYCLE -_-
+        t_initial=140,  # number of epochs PER CYCLE -_-
         lr_min=1e-6,
         warmup_t=10,
         warmup_lr_init=1e-5,

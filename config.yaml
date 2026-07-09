@@ -69,6 +69,10 @@ xai:
   enabled: false
   methode: gradcam__xai    # 'gradcam_xai' |
   target_class: null       # null = automatically previous class
+  occlusion:
+    patch_size: 32         # size of the covering patch
+    stride: 16             # step size taken in the proccess
+    batch_size: 32         # the number of occluded image versions processed simultaneously by the model
 
 # -------------------------------------------------------------
 # Logging

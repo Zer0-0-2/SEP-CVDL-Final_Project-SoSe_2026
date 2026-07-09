@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from timm.scheduler import Scheduler
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
@@ -34,11 +35,13 @@ class ClassifierTrainer:
         label_smoothing: float = 0.0,
         image_size: int = 224,
         augmentation_file: str = "vetted",
+        scheduler: Scheduler = None,
     ):
         """
         architecture: "convnext" or "gcvit"
         model_name: see classifier_convnext.py or classifier_gcvit.py for timm output
         """
+
         self.architecture = architecture
         self.data_dir = data_dir
         self.model_name = model_name
@@ -49,6 +52,7 @@ class ClassifierTrainer:
         self.label_smoothing = label_smoothing
         self.image_size = image_size
         self.augmentation_file = augmentation_file
+        self.scheduler = scheduler
         self.device = torch.device(
             torch.cuda.get_device_name(torch.cuda.current_device())
             if torch.cuda.is_available()
@@ -200,12 +204,17 @@ class ClassifierTrainer:
         # for plotting
         history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "lr": []}
 
-        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_file}"
+        params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_file}_sd{self.scheduler.__class__.__name__ if self.scheduler is not None else 'None'}"
+
+        print(f"Training with parameters: {params_str}")
         save_path = (
             DEFAULT_WEIGHTS_DIR / f"{self.architecture}_{self.model_name}_{note}_{params_str}.pt"
         )
 
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=epochs, eta_min=1e-6)
+        if self.scheduler is not None:
+            scheduler = self.scheduler
+        else:
+            scheduler = None
 
         last_epoch = 0
 
@@ -216,8 +225,11 @@ class ClassifierTrainer:
             train_loss, train_acc = self.train_one_epoch(train_loader)
             val_loss, val_acc = self.validate(val_loader)
 
-            scheduler.step()
-            current_lr = scheduler.get_last_lr()[0]
+            if scheduler is not None:
+                scheduler.step()
+                current_lr = scheduler.get_last_lr()[0]
+            else:
+                current_lr = self.lr
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)

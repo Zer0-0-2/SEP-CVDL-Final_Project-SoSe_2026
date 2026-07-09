@@ -2,15 +2,34 @@
 #  Animal Recognition — Pipeline Configuration
 #  Change values here to swap models or tune hyperparameters.
 #  No code changes needed to switch between classifiers.
+#
+#  IMPLEMENTED OPTIONS (as of current main):
+#    detector:   yolov8m  (src/models/detector.py)
+#                yoloworld  (src/models/yoloworld.py)
+#    classifier: baseline_cnn  (src/models/baseline_cnn.py)
+#                transfer      (src/models/transfer_model.py — timm backbone)
+#                convnext      (src/models/classifier_convnext.py — torchvision)
+#                gcvit         (src/models/classifier_gcvit.py — experimental)
+#    ood_gate:   softmax_threshold  (src/ood/gate.py — IMPLEMENTED)
+#                energy             (src/ood/gate.py — IMPLEMENTED)
+#                temperature_scaling (src/ood/gate.py — IMPLEMENTED, same as energy with T scaling)
+#    xai:        gradcam_xai   (src/xai/gradcam_xai.py — IMPLEMENTED)
+#                occlusion_xai (src/xai/occlusion_xai.py — IMPLEMENTED)
 # =============================================================
 
 # -------------------------------------------------------------
 # Pipeline routing
 # -------------------------------------------------------------
 pipeline:
-  detector: yolov8m.pt          # weights filename (must be findable on disk)
-  classifier: baseline_cnn      # 'baseline_cnn'  |  'transfer'
-  ood_gate: softmax_threshold   # 'softmax_threshold'  |  'temperature_scaling'  |  'energy'
+  # IMPLEMENTED: 'yolov8m.pt' (default), 'yolov8x-worldv2.pt' (yoloworld — needs yoloworld.py)
+  detector: yolov8m.pt
+
+  # IMPLEMENTED: 'baseline_cnn' | 'transfer'
+  # NOT YET WIRED INTO inference.py: 'convnext' | 'gcvit' (use their own training scripts)
+  classifier: baseline_cnn
+
+  # IMPLEMENTED: 'softmax_threshold' | 'energy' | 'temperature_scaling'
+  ood_gate: softmax_threshold
 
 # -------------------------------------------------------------
 # Classifier settings
@@ -22,7 +41,12 @@ classifier:
     weights: null               # path to .pt checkpoint; null = random init (for training)
 
   transfer:
-    backbone: efficientnet_b3   # any timm model name, e.g. convnext_tiny, resnet50
+    # IMPLEMENTED timm backbones (all accept 224x224 input):
+    #   'efficientnet_b3'  — 12M params, good accuracy/speed tradeoff (default)
+    #   'convnext_tiny'    — 28M params, strong on fine-grained tasks
+    #   'resnet50'         — 25M params, fast, good baseline
+    #   'vit_small_patch16_224' — 22M params, ViT (get_last_conv_layer() will fail — Grad-CAM unsupported)
+    backbone: efficientnet_b3
     pretrained: true            # use ImageNet pretrained weights for the backbone
     weights: null               # path to .pt checkpoint; null = pretrained backbone + fresh head
 
@@ -30,22 +54,23 @@ classifier:
 # OOD gate
 # -------------------------------------------------------------
 ood:
-  threshold: 0.5        # τ: reject if max(softmax(logits)) < threshold
-  temperature: 1.0      # T: divide logits by T before softmax (temperature_scaling only)
-                        # Note: energy score threshold has opposite polarity — see gate.py
+  # softmax_threshold: reject if max(softmax(logits)) < threshold  (higher = more rejections)
+  # energy:            reject if energy score > threshold           (lower = more rejections)
+  threshold: 0.5
+  temperature: 1.0      # T for energy/temperature_scaling: divides logits before softmax
 
 # -------------------------------------------------------------
 # Training
 # -------------------------------------------------------------
 training:
   seed: 42
-  epochs: 25            # total epochs for baseline CNN; ignored for transfer (uses phases)
+  epochs: 25            # total epochs for baseline_cnn; ignored for transfer (uses phases below)
   batch_size: 32
   lr: 1.0e-3
   weight_decay: 1.0e-4
   num_workers: 4
 
-  # Three-phase fine-tuning (transfer learning only)
+  # Three-phase fine-tuning (transfer only — used by trainer.py)
   phase1_epochs: 5      # freeze backbone, train head only at lr
   phase2_epochs: 10     # unfreeze last 2 backbone blocks, lr / 10
   phase3_epochs: 10     # unfreeze full network, cosine annealing to 0
@@ -55,10 +80,25 @@ training:
 # -------------------------------------------------------------
 data:
   raw_dir: animal_recognition/data/raw
-  processed_dir: animal_recognition/data/processed
+  processed_dir: animal_recognition/data/processed    # cropped/accepted images (YoloWorld preprocessing)
   confounders_dir: animal_recognition/data/confounders
   val_split: 0.2        # fraction of raw data held out for validation
-  image_size: 224       # both classifier input size and crop resize target
+  image_size: 224       # classifier input size and detector crop resize target
+  normalize_mean: [0.485, 0.456, 0.406]   # ImageNet mean — used by xAI scripts
+  normalize_std: [0.229, 0.224, 0.225]    # ImageNet std  — used by xAI scripts
+
+# -------------------------------------------------------------
+# xAI (Explainability) — used by src/xai/ scripts
+# -------------------------------------------------------------
+xai:
+  enabled: false
+  # IMPLEMENTED: 'gradcam_xai' | 'occlusion_xai'
+  methode: gradcam_xai
+  target_class: null    # null = use the model's own predicted class
+  occlusion:
+    patch_size: 32      # size of the occluding patch in pixels
+    stride: 16          # sliding step size
+    batch_size: 32      # occluded versions processed per forward pass
 
 # -------------------------------------------------------------
 # Logging

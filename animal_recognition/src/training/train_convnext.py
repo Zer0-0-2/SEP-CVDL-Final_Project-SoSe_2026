@@ -18,6 +18,7 @@ from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
 
 import animal_recognition.src.data.augmentations_mild as augmentations_mild
 import animal_recognition.src.data.augmentations as augmentations
+import animal_recognition.src.data.augmentations_vetted as augmentations_vetted
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -64,8 +65,8 @@ class ConvNextTrainer:
         )
 
     def get_transforms(self):
-        train_transform = augmentations_mild.get_train_transforms(image_size=self.image_size)
-        val_transform = augmentations_mild.get_val_transforms(image_size=self.image_size)
+        train_transform = augmentations_vetted.get_train_transforms(image_size=self.image_size)
+        val_transform = augmentations_vetted.get_val_transforms(image_size=self.image_size)
 
         return train_transform, val_transform
 
@@ -339,4 +340,21 @@ if __name__ == "__main__":
         label_smoothing=0.1,
         image_size=384,
     )
+
     trainer_base_stable.train(epochs=20, note="small_stable")
+
+    trainer_scratch_optimized = ConvNextTrainer(
+        model_name="convnext_tiny",
+        pretrained=False,
+        batch_size=32,
+        lr=3e-3,
+        weight_decay=0.05,
+        label_smoothing=0.2,  # Increased to prevent overconfidence
+        image_size=224,
+    )
+
+    trainer_scratch_optimized.train(
+        epochs=150,
+        patience=20,  # Increased patience because strong augmentations cause jumpy validation loss
+        note="strong_aug_warmup",
+    )

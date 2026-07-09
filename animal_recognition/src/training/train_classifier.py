@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Subset
-from tqdm import tqdm
 
 # Import the specific scheduler class directly
 from timm.scheduler import cosine_lr
+from torch.utils.data import DataLoader, Subset
+from tqdm import tqdm
 
 import animal_recognition.src.data.augmentations as augmentations
 import animal_recognition.src.data.augmentations_mild as augmentations_mild

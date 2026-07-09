@@ -10,9 +10,40 @@ import animal_recognition.src.data.dataset as animal_dataset
 class ConvNextClassifier(nn.Module):
     def __init__(self, pretrained: bool = False, model_name: str = "convnext_tiny"):
         """
-        Model names: "convnext_tiny", "convnext_small", "convnext_base", "convnext_large"
-        the first three have 224x224 input size, the last one has 384x384 input size (probably too large for compute resources)
+        output of timm_list_models():
+        ['convnext_atto',
+        'convnext_atto_ols',
+        'convnext_atto_rms',
+        'convnext_base',
+        'convnext_femto',
+        'convnext_femto_ols',
+        'convnext_large',
+        'convnext_large_mlp',
+        'convnext_nano',
+        'convnext_nano_ols',
+        'convnext_pico',
+        'convnext_pico_ols',
+        'convnext_small',
+        'convnext_tiny',
+        'convnext_tiny_hnf',
+        'convnext_xlarge',
+        'convnext_xxlarge',
+        'convnext_zepto_rms',
+        'convnext_zepto_rms_ols',
+        'convnextv2_atto',
+        'convnextv2_base',
+        'convnextv2_femto',
+        'convnextv2_huge',
+        'convnextv2_large',
+        'convnextv2_nano',
+        'convnextv2_pico',
+        'convnextv2_small',
+        'convnextv2_tiny',
+        'test_convnext',
+        'test_convnext2',
+        'test_convnext3']
         """
+
         super().__init__()
         self.num_classes = len(animal_dataset.CLASSES)
 

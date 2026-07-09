@@ -69,12 +69,6 @@ class ClassifierTrainer:
             f"Architecture: {self.architecture} | Model: {self.model_name} (Pretrained: {self.pretrained})"
         )
         self.model = model
-        if self.architecture == "convnext":
-            self.model = ConvNextClassifier(pretrained=self.pretrained, model_name=self.model_name)
-        elif self.architecture == "gcvit":
-            self.model = GCViTClassifier(pretrained=self.pretrained, model_name=self.model_name)
-        else:
-            raise ValueError(f"Wrong architecture: {self.architecture}")
 
         self.model = self.model.to(self.device)
         self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
@@ -163,8 +157,9 @@ class ClassifierTrainer:
             images, labels = images.to(self.device), labels.to(self.device)
 
             self.optimizer.zero_grad()
-            outputs = self.model(images)
-            loss = self.criterion(outputs, labels)
+            with torch.autocast(device_type=self.device.type, dtype=torch.bfloat16):
+                outputs = self.model(images)
+                loss = self.criterion(outputs, labels)
             loss.backward()
             self.optimizer.step()
 
@@ -190,8 +185,9 @@ class ClassifierTrainer:
         for images, labels in pbar:
             images, labels = images.to(self.device), labels.to(self.device)
 
-            outputs = self.model(images)
-            loss = self.criterion(outputs, labels)
+            with torch.autocast(device_type=self.device.type, dtype=torch.bfloat16):
+                outputs = self.model(images)
+                loss = self.criterion(outputs, labels)
 
             running_loss += loss.item() * images.size(0)
             _, predicted = torch.max(outputs, 1)
@@ -223,9 +219,7 @@ class ClassifierTrainer:
         params_str = f"pre{str(self.pretrained)}_bs{self.batch_size}_lr{self.lr}_wd{self.weight_decay}_ls{self.label_smoothing}_sz{self.image_size}_aug{self.augmentation_file}_sched{self.scheduler.__class__.__name__ if self.scheduler is not None else 'None'}"
 
         print(f"Training with parameters: {params_str}")
-        save_path = (
-            DEFAULT_WEIGHTS_DIR / f"{self.model_name}_{note}_{params_str}.pt"
-        )
+        save_path = DEFAULT_WEIGHTS_DIR / f"{self.model_name}_{note}_{params_str}.pt"
 
         last_epoch = 0
 
@@ -321,9 +315,57 @@ class ClassifierTrainer:
 
 if __name__ == "__main__":
     # use this more compact and modular syntax from now on
+
+    model0 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
+
+    optimizer0 = optim.AdamW(model0.parameters(), lr=1e-4, weight_decay=5e-4)
+
+    # https://timm.fast.ai/SGDR
+    scheduler = cosine_lr.CosineLRScheduler(
+        optimizer0,
+        t_initial=140,  # number of epochs PER CYCLE -_-
+        lr_min=1e-6,
+        warmup_t=10,
+        warmup_lr_init=1e-5,
+    )
+
+    trainer_scratch_optimized0 = ClassifierTrainer(
+        model=model0,
+        optimizer=optimizer0,
+        scheduler=scheduler,
+        batch_size=32,
+        label_smoothing=0.2,
+        image_size=224,
+        augmentation_file="vetted",
+    )
+
+    trainer_scratch_optimized0.train(
+        epochs=150,
+        note="cosinelr_with_warmup",
+    )
+
     model = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
-    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=5e-4)
+    # separate parameters for weight decay
+    # https://arxiv.org/pdf/2301.00808
+    decay = []
+    no_decay = []
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+        # Exclude GRN gamma (weight) and beta (bias) from weight decay
+        if "grn" in name and (
+            "weight" in name or "bias" in name or "gamma" in name or "beta" in name
+        ):
+            no_decay.append(param)
+        else:
+            decay.append(param)
+
+    # weight decay between 1e-4 and 1e-3
+    optimizer = optim.AdamW(
+        [{"params": decay, "weight_decay": 5e-4}, {"params": no_decay, "weight_decay": 0.0}],
+        lr=1e-4,
+    )
 
     # https://timm.fast.ai/SGDR
     scheduler = cosine_lr.CosineLRScheduler(
@@ -332,6 +374,7 @@ if __name__ == "__main__":
         lr_min=1e-6,
         warmup_t=10,
         warmup_lr_init=1e-5,
+        warmup_prefix=True,
     )
 
     trainer_scratch_optimized = ClassifierTrainer(
@@ -346,5 +389,5 @@ if __name__ == "__main__":
 
     trainer_scratch_optimized.train(
         epochs=150,
-        note="cosinelr_with_warmup",
+        note="cosinelr_with_warmup_optimized_weight_decay",
     )

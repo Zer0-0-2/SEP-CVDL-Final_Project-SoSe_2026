@@ -27,16 +27,15 @@ DEFAULT_WEIGHTS_DIR = PROJECT_ROOT / "animal_recognition" / "models" / "weights"
 class ClassifierTrainer:
     def __init__(
         self,
-        architecture: str,
-        model_name: str,
+        model,
         data_dir: Path = DEFAULT_DATA_DIR,
-        pretrained: bool = True,
         batch_size: int = 32,
         lr: float = 0.01,
         weight_decay: float = 1e-4,
         label_smoothing: float = 0.0,
         image_size: int = 224,
         augmentation_file: str = "vetted",
+        optimizer=None,
         scheduler=None,
     ):
         """
@@ -44,10 +43,10 @@ class ClassifierTrainer:
         model_name: see classifier_convnext.py or classifier_gcvit.py for timm output
         """
 
-        self.architecture = architecture
         self.data_dir = data_dir
-        self.model_name = model_name
-        self.pretrained = pretrained
+        self.architecture = model.architecture  # gcvit or convnext
+        self.model_name = model.model_name  # specific name
+        self.pretrained = model.pretrained  # True/false
         self.batch_size = batch_size
         self.lr = lr
         self.weight_decay = weight_decay
@@ -55,7 +54,8 @@ class ClassifierTrainer:
         self.image_size = image_size
         self.augmentation_file = augmentation_file
         self.scheduler = scheduler
-        self.device = torch.device(
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device_name = (
             torch.cuda.get_device_name(torch.cuda.current_device())
             if torch.cuda.is_available()
             else "cpu"
@@ -63,12 +63,12 @@ class ClassifierTrainer:
 
         DEFAULT_WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
 
-        print(f"Using device: {self.device}")
+        print(f"Using device: {self.device_name}")
         print(f"Data Directory: {self.data_dir}")
         print(
             f"Architecture: {self.architecture} | Model: {self.model_name} (Pretrained: {self.pretrained})"
         )
-
+        self.model = model
         if self.architecture == "convnext":
             self.model = ConvNextClassifier(pretrained=self.pretrained, model_name=self.model_name)
         elif self.architecture == "gcvit":
@@ -78,9 +78,20 @@ class ClassifierTrainer:
 
         self.model = self.model.to(self.device)
         self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
-        self.optimizer = optim.AdamW(
-            self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay
-        )
+
+        if optimizer is not None:
+            self.optimizer = optimizer
+            # Try extracting these to keep filename string consistent
+            self.lr = self.optimizer.param_groups[0].get("lr", self.lr)
+            self.weight_decay = self.optimizer.param_groups[0].get(
+                "weight_decay", self.weight_decay
+            )
+        else:
+            self.optimizer = optim.AdamW(
+                self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay
+            )
+
+        self.scheduler = scheduler
 
     def get_transforms(self):
         aug_modules = {
@@ -309,20 +320,31 @@ class ClassifierTrainer:
 
 
 if __name__ == "__main__":
+    # use this more compact and modular syntax from now on
+    model = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
+
+    optimizer = optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.05)
+
+    # https://timm.fast.ai/SGDR
+    scheduler = cosine_lr.CosineLRScheduler(
+        optimizer,
+        t_initial=150,  # number of epochs PER CYCLE -_-
+        lr_min=1e-6,
+        warmup_t=10,
+        warmup_lr_init=1e-5,
+    )
+
     trainer_scratch_optimized = ClassifierTrainer(
-        architecture="convnext",
-        model_name="convnext_small",
-        pretrained=False,
+        model=model,
+        optimizer=optimizer,
+        scheduler=scheduler,
         batch_size=32,
-        lr=3e-3,
-        weight_decay=0.05,
         label_smoothing=0.2,
         image_size=224,
         augmentation_file="vetted",
-        scheduler=
     )
 
     trainer_scratch_optimized.train(
         epochs=150,
-        note="aug_val_warmup",
+        note="cosinelr_with_warmup",
     )

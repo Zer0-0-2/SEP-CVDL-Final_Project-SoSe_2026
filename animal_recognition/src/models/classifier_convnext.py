@@ -46,6 +46,9 @@ class ConvNextClassifier(nn.Module):
 
         super().__init__()
         self.num_classes = len(animal_dataset.CLASSES)
+        self.architecture = "convnext"
+        self.model_name = model_name
+        self.pretrained = pretrained
 
         self.model = timm.create_model(
             model_name, pretrained=pretrained, num_classes=self.num_classes

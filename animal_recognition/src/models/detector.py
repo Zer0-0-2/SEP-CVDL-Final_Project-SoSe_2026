@@ -16,17 +16,25 @@ class AnimalDetector:
     def __init__(self, weights: str = "yolov8m.pt"):
         self.model = YOLO(weights) #auto-downloads for the first run
 
-    def detect(self, image_path: str):
-        """Run detection, return list of (class_id, confidence, box) for cats/dogs only."""
-        results = self.model(image_path, classes = [CAT_CLASS, DOG_CLASS], verbose=False)
+    def _parse_results(self, results) -> list:
         detections = []
         for r in results:
             for box in r.boxes:
                 cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                xyxy = box.xyxy[0].tolist() #form: [x1, yq, x2, y2]
+                xyxy = box.xyxy[0].tolist()
                 detections.append({"class_id": cls_id, "confidence": conf, "box": xyxy})
         return detections
+
+    def detect(self, image_path: str) -> list:
+        """Run detection on a file path, return list of {class_id, confidence, box}."""
+        results = self.model(image_path, classes=[CAT_CLASS, DOG_CLASS], verbose=False)
+        return self._parse_results(results)
+
+    def detect_pil(self, image) -> list:
+        """Run detection on a PIL image, return list of {class_id, confidence, box}."""
+        results = self.model(image, classes=[CAT_CLASS, DOG_CLASS], verbose=False)
+        return self._parse_results(results)
     
 def draw_detections(image_path: str, detections: list, out_path: str = "test_images/annotated.jpg"):
     """Draw bounding boxes + labels on the image and save it for visual inspection."""

@@ -20,6 +20,7 @@ metrics.
 
 import argparse
 import random
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -27,6 +28,7 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from torchvision import transforms as T
 from tqdm import tqdm
 
 REJECT = -1
@@ -59,14 +61,60 @@ NUM_CLASSES = len(CLASSES)
 
 
 class Model(nn.Module):
-    """TODO (students): replace this with your own model.
+    """Full pipeline: Detector -> Classifier -> OODGate."""
 
-    Contract: given a PIL image, return a class index in {-1, 0, ..., 19}.
-    The placeholder below is a uniform random guesser so the script runs.
-    """
+    def __init__(self):
+        super().__init__()
+        sys.path.insert(0, str(Path(__file__).parent))
+        from animal_recognition.src.config import load_config
+        from animal_recognition.src.models.detector import AnimalDetector
+        from animal_recognition.src.models.baseline_cnn import BaselineCNN
+        from animal_recognition.src.models.transfer_model import TransferClassifier
+        from animal_recognition.src.ood.gate import OODGate
+
+        self.cfg = load_config()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.detector = AnimalDetector(weights=self.cfg.pipeline.detector)
+
+        if self.cfg.pipeline.classifier == "transfer":
+            tc = self.cfg.classifier.transfer
+            self.classifier = TransferClassifier(
+                backbone=tc.backbone,
+                num_classes=self.cfg.classifier.num_classes,
+                pretrained=False,
+                weights=tc.weights,
+            )
+        else:
+            self.classifier = BaselineCNN(num_classes=self.cfg.classifier.num_classes)
+            w = self.cfg.classifier.baseline_cnn.weights
+            if w is not None:
+                self.classifier.load_state_dict(torch.load(w, map_location="cpu"))
+
+        self.classifier = self.classifier.to(self.device).eval()
+        self.gate = OODGate(self.cfg)
+
+        self._transform = T.Compose([
+            T.Resize((self.cfg.data.image_size, self.cfg.data.image_size)),
+            T.ToTensor(),
+            T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+        ])
 
     def forward(self, image: Image.Image) -> int:
-        return random.randint(-1, NUM_CLASSES - 1)
+        detections = self.detector.detect_pil(image)
+        if not detections:
+            return -1
+
+        # pick largest bounding box by area
+        best = max(detections, key=lambda d: (d["box"][2] - d["box"][0]) * (d["box"][3] - d["box"][1]))
+        x1, y1, x2, y2 = [int(v) for v in best["box"]]
+        crop = image.crop((x1, y1, x2, y2))
+
+        tensor = self._transform(crop).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            logits = self.classifier(tensor).squeeze(0)
+
+        return self.gate(logits)
 
 
 if __name__ == "__main__":

@@ -15,8 +15,9 @@ from albumentations.pytorch import ToTensorV2
 
 from animal_recognition.src.data.dataset import AnimalDataset
 from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
+
 import animal_recognition.src.data.augmentations_mild as augmentations_mild
-import animal_recognition.src.data.augmentations as augmentations_strong
+import animal_recognition.src.data.augmentations as augmentations
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
@@ -281,7 +282,6 @@ if __name__ == "__main__":
         image_size=224,
     )
     trainer_baseline.train(epochs=80)
-    """
     trainer_pretrained = ConvNextTrainer(
         model_name="convnext_tiny",
         pretrained=True,
@@ -328,3 +328,15 @@ if __name__ == "__main__":
     trainer_cosine_annealing_scheduler.train(
         epochs=150, patience=15, note="high_learning_rate_at_start"
     )
+    """
+
+    trainer_base_stable = ConvNextTrainer(
+        model_name="convnext_base",
+        pretrained=True,
+        batch_size=32,
+        lr=1e-4,
+        weight_decay=0.05,
+        label_smoothing=0.1,
+        image_size=384,
+    )
+    trainer_base_stable.train(epochs=20, note="small_stable")

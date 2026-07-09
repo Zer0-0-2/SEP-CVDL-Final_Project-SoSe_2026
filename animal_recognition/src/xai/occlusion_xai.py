@@ -11,3 +11,4 @@ from torchvision import transforms
 
 from src.config import load_config
 from src.models.baseline_cnn import BaselineCNN
+from captum.attr import Occlusion

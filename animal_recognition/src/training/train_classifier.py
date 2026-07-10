@@ -482,3 +482,252 @@ if __name__ == "__main__":
     del model_3, optimizer_3, scheduler_3, trainer_scratch_optimized_3
     torch.cuda.empty_cache()
     """
+
+    # GCViT (normal finetuning, nothing special)
+    model_4 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+
+    optimizer_4 = optim.AdamW(model_4.parameters(), lr=1e-4, weight_decay=1e-4)
+    scheduler_4 = cosine_lr.CosineLRScheduler(
+        optimizer_4, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+
+    trainer_4 = ClassifierTrainer(
+        model=model_4,
+        optimizer=optimizer_4,
+        scheduler=scheduler_4,
+        batch_size=32,
+        augmentation_file="vetted",
+    )
+    trainer_4.train(epochs=150, note="gcvit_tiny_standard_finetune")
+
+    del model_4, optimizer_4, scheduler_4, trainer_4
+    torch.cuda.empty_cache()
+
+    # smaller LR = conservative finetuning
+    model_5 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+
+    optimizer_5 = optim.AdamW(model_5.parameters(), lr=1e-5, weight_decay=5e-4)
+    scheduler_5 = cosine_lr.CosineLRScheduler(
+        optimizer_5, t_initial=140, lr_min=1e-7, warmup_t=10, warmup_lr_init=1e-6
+    )
+
+    trainer_5 = ClassifierTrainer(
+        model=model_5,
+        optimizer=optimizer_5,
+        scheduler=scheduler_5,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_5.train(epochs=150, note="gcvit_tiny_conservative_finetune")
+
+    del model_5, optimizer_5, scheduler_5, trainer_5
+    torch.cuda.empty_cache()
+
+    # larger LR = agressive finetuning
+    model_6 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+
+    optimizer_6 = optim.AdamW(model_6.parameters(), lr=5e-4, weight_decay=1e-4)
+    scheduler_6 = cosine_lr.CosineLRScheduler(
+        optimizer_6, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=5e-5
+    )
+
+    trainer_6 = ClassifierTrainer(
+        model=model_6,
+        optimizer=optimizer_6,
+        scheduler=scheduler_6,
+        batch_size=32,
+        augmentation_file="vetted",
+    )
+    trainer_6.train(epochs=150, note="gcvit_tiny_aggressive_finetune")
+
+    del model_6, optimizer_6, scheduler_6, trainer_6
+    torch.cuda.empty_cache()
+
+    # freeze all except the head, smaller lr because of that
+    model_7 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    for name, param in model_7.named_parameters():
+        if "head" not in name:
+            param.requires_grad = False
+
+    optimizer_7 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_7.parameters()), lr=1e-3, weight_decay=1e-4
+    )
+    scheduler_7 = cosine_lr.CosineLRScheduler(
+        optimizer_7, t_initial=140, lr_min=1e-5, warmup_t=10, warmup_lr_init=1e-4
+    )
+
+    trainer_7 = ClassifierTrainer(
+        model=model_7,
+        optimizer=optimizer_7,
+        scheduler=scheduler_7,
+        batch_size=32,
+        augmentation_file="vetted",
+    )
+    trainer_7.train(epochs=150, note="gcvit_tiny_linear_probe")
+
+    del model_7, optimizer_7, scheduler_7, trainer_7
+    torch.cuda.empty_cache()
+
+    # freeze head and stage 3
+    model_8 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    for name, param in model_8.named_parameters():
+        if "head" not in name and "stages.3" not in name:
+            param.requires_grad = False
+
+    optimizer_8 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_8.parameters()), lr=1e-4, weight_decay=1e-4
+    )
+    scheduler_8 = cosine_lr.CosineLRScheduler(
+        optimizer_8, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+
+    trainer_8 = ClassifierTrainer(
+        model=model_8,
+        optimizer=optimizer_8,
+        scheduler=scheduler_8,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_8.train(epochs=150, note="gcvit_tiny_partial_freeze")
+
+    del model_8, optimizer_8, scheduler_8, trainer_8
+    torch.cuda.empty_cache()
+
+    # custom weight decay like in ConvNext
+    model_9 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    decay_9 = []
+    no_decay_9 = []
+    for name, param in model_9.named_parameters():
+        if not param.requires_grad:
+            continue
+        if len(param.shape) == 1 or name.endswith(".bias"):
+            no_decay_9.append(param)
+        else:
+            decay_9.append(param)
+
+    optimizer_9 = optim.AdamW(
+        [{"params": decay_9, "weight_decay": 5e-4}, {"params": no_decay_9, "weight_decay": 0.0}],
+        lr=1e-4,
+    )
+    scheduler_9 = cosine_lr.CosineLRScheduler(
+        optimizer_9, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+
+    trainer_9 = ClassifierTrainer(
+        model=model_9,
+        optimizer=optimizer_9,
+        scheduler=scheduler_9,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_9.train(epochs=150, note="gcvit_tiny_custom_wd")
+
+    del model_9, optimizer_9, scheduler_9, trainer_9
+    torch.cuda.empty_cache()
+
+    # longer warmup
+    model_10 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    optimizer_10 = optim.AdamW(model_10.parameters(), lr=1e-4, weight_decay=1e-4)
+    # 20 epochs warmup
+    scheduler_10 = cosine_lr.CosineLRScheduler(
+        optimizer_10, t_initial=140, lr_min=1e-6, warmup_t=20, warmup_lr_init=1e-6
+    )
+
+    trainer_10 = ClassifierTrainer(
+        model=model_10,
+        optimizer=optimizer_10,
+        scheduler=scheduler_10,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_10.train(epochs=150, note="gcvit_tiny_long_warmup")
+
+    del model_10, optimizer_10, scheduler_10, trainer_10
+    torch.cuda.empty_cache()
+
+    from timm.scheduler.step_lr import StepLRScheduler
+
+    # actual config from the fine grained cat classification paper
+    model_11 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    optimizer_11 = optim.AdamW(model_11.parameters(), lr=1e-4, weight_decay=1e-4)
+    # Step-wise decay, e.g., decay by 0.5 every 30 epochs
+    scheduler_11 = StepLRScheduler(optimizer_11, decay_t=30, decay_rate=0.5)
+
+    trainer_11 = ClassifierTrainer(
+        model=model_11,
+        optimizer=optimizer_11,
+        scheduler=scheduler_11,
+        batch_size=32,
+        label_smoothing=0.1,
+        augmentation_file="stronger",
+    )
+    trainer_11.train(epochs=100, patience=5, note="gcvit_tiny_paper_rep")
+
+    del model_11, optimizer_11, scheduler_11, trainer_11
+    torch.cuda.empty_cache()
+
+    # bottom 50% layer freezing
+    model_12 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    # Freeze stages 0 and 1
+    for name, param in model_12.named_parameters():
+        if "stages.0" in name or "stages.1" in name or "patch_embed" in name:
+            param.requires_grad = False
+
+    optimizer_12 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_12.parameters()), lr=1e-4, weight_decay=1e-4
+    )
+    scheduler_12 = cosine_lr.CosineLRScheduler(
+        optimizer_12, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+
+    trainer_12 = ClassifierTrainer(
+        model=model_12,
+        optimizer=optimizer_12,
+        scheduler=scheduler_12,
+        batch_size=32,
+        label_smoothing=0.1,
+        augmentation_file="vetted",
+    )
+    trainer_12.train(epochs=150, note="gcvit_tiny_bottom_freeze")
+
+    del model_12, optimizer_12, scheduler_12, trainer_12
+    torch.cuda.empty_cache()
+
+    # custom learning rate depending on the layer (idk if that will work, sounds interesting though)
+    model_13 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+
+    # Assign different learning rates based on stage depth
+    param_groups_13 = []
+    for name, param in model_13.named_parameters():
+        if not param.requires_grad:
+            continue
+
+        lr_scale = 1.0
+        if "patch_embed" in name or "stages.0" in name:
+            lr_scale = 0.1
+        elif "stages.1" in name:
+            lr_scale = 0.2
+        elif "stages.2" in name:
+            lr_scale = 0.5
+        # stages.3 and head get 1.0 scale for now
+
+        param_groups_13.append({"params": [param], "lr": 1e-4 * lr_scale, "weight_decay": 1e-4})
+
+    optimizer_13 = optim.AdamW(param_groups_13)
+    # Warmup base lr and min lr
+    scheduler_13 = cosine_lr.CosineLRScheduler(
+        optimizer_13, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+
+    trainer_13 = ClassifierTrainer(
+        model=model_13,
+        optimizer=optimizer_13,
+        scheduler=scheduler_13,
+        batch_size=32,
+        label_smoothing=0.1,
+        augmentation_file="stronger",
+    )
+    trainer_13.train(epochs=150, note="gcvit_tiny_layer_decay")
+
+    del model_13, optimizer_13, scheduler_13, trainer_13
+    torch.cuda.empty_cache()

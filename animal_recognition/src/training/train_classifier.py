@@ -400,7 +400,6 @@ if __name__ == "__main__":
 
     del model_1, optimizer_1, scheduler_1, trainer_scratch_optimized_1
     torch.cuda.empty_cache()
-    """
     model_2 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
     optimizer_2 = optim.AdamW(model_2.parameters(), lr=1e-4, weight_decay=5e-4)
@@ -482,3 +481,4 @@ if __name__ == "__main__":
     )
     del model_3, optimizer_3, scheduler_3, trainer_scratch_optimized_3
     torch.cuda.empty_cache()
+    """

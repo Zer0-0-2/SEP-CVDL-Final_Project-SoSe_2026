@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 import animal_recognition.src.data.augmentations as augmentations
 import animal_recognition.src.data.augmentations_mild as augmentations_mild
+import animal_recognition.src.data.augmentations_stronger as augmentations_stronger
 import animal_recognition.src.data.augmentations_vetted as augmentations_vetted
 from animal_recognition.src.data.dataset import AnimalDataset
 from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
@@ -92,6 +93,7 @@ class ClassifierTrainer:
             "mild": augmentations_mild,
             "base": augmentations,
             "vetted": augmentations_vetted,
+            "stronger": augmentations_stronger,
         }
 
         if self.augmentation_file not in aug_modules:
@@ -315,7 +317,7 @@ class ClassifierTrainer:
 
 if __name__ == "__main__":
     # use this more compact and modular syntax from now on
-
+    """
     model_0 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
     optimizer_0 = optim.AdamW(model_0.parameters(), lr=1e-4, weight_decay=5e-4)
@@ -395,3 +397,88 @@ if __name__ == "__main__":
         epochs=150,
         note="cosinelr_with_warmup_optimized_weight_decay",
     )
+
+    del model_1, optimizer_1, scheduler_1, trainer_scratch_optimized_1
+    torch.cuda.empty_cache()
+    """
+    model_2 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
+
+    optimizer_2 = optim.AdamW(model_2.parameters(), lr=1e-4, weight_decay=5e-4)
+
+    # https://timm.fast.ai/SGDR
+    scheduler_2 = cosine_lr.CosineLRScheduler(
+        optimizer_2,
+        t_initial=140,  # number of epochs PER CYCLE -_-
+        lr_min=1e-6,
+        warmup_t=10,
+        warmup_lr_init=1e-5,
+    )
+
+    trainer_scratch_optimized_2 = ClassifierTrainer(
+        model=model_2,
+        optimizer=optimizer_2,
+        scheduler=scheduler_2,
+        batch_size=32,
+        label_smoothing=0.2,
+        image_size=224,
+        augmentation_file="stronger",
+    )
+
+    trainer_scratch_optimized_2.train(
+        epochs=150,
+        note="cosinelr_with_warmup",
+    )
+
+    # delete after run and before
+    del model_2, optimizer_2, scheduler_2, trainer_scratch_optimized_2
+    torch.cuda.empty_cache()
+
+    model_3 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
+
+    # separate parameters for weight decay
+    # https://arxiv.org/pdf/2301.00808
+    decay_3 = []
+    no_decay_3 = []
+    for name, param in model_3.named_parameters():
+        if not param.requires_grad:
+            continue
+        # Exclude GRN gamma (weight) and beta (bias) from weight decay
+        if "grn" in name and (
+            "weight" in name or "bias" in name or "gamma" in name or "beta" in name
+        ):
+            no_decay_3.append(param)
+        else:
+            decay_3.append(param)
+
+    # weight decay between 1e-4 and 1e-3
+    optimizer_3 = optim.AdamW(
+        [{"params": decay_3, "weight_decay": 5e-4}, {"params": no_decay_3, "weight_decay": 0.0}],
+        lr=1e-4,
+    )
+
+    # https://timm.fast.ai/SGDR
+    scheduler_3 = cosine_lr.CosineLRScheduler(
+        optimizer_3,
+        t_initial=140,  # number of epochs PER CYCLE -_-
+        lr_min=1e-6,
+        warmup_t=10,
+        warmup_lr_init=1e-5,
+        warmup_prefix=True,
+    )
+
+    trainer_scratch_optimized_3 = ClassifierTrainer(
+        model=model_3,
+        optimizer=optimizer_3,
+        scheduler=scheduler_3,
+        batch_size=32,
+        label_smoothing=0.2,
+        image_size=224,
+        augmentation_file="stronger",
+    )
+
+    trainer_scratch_optimized_3.train(
+        epochs=150,
+        note="cosinelr_with_warmup_optimized_weight_decay",
+    )
+    del model_3, optimizer_3, scheduler_3, trainer_scratch_optimized_3
+    torch.cuda.empty_cache()

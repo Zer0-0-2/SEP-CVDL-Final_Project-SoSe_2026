@@ -239,6 +239,7 @@ class ClassifierTrainer:
             # Extract LR straight from the optimizer parameter groups
             current_lr = self.optimizer.param_groups[0]["lr"]
 
+            # for plotting
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
             history["train_acc"].append(train_acc)

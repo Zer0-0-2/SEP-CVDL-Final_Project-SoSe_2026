@@ -13,3 +13,4 @@ wandb
 gallery-dl
 logging
 timm
+captum

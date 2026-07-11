@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
 
-from src.config import load_config
-from src.models.baseline_cnn import BaselineCNN
+from animal_recognition.src.config import load_config
+from animal_recognition.src.models.baseline_cnn import BaselineCNN
 from captum.attr import Occlusion
 
 def run_occlusion(model: torch.nn.Module, image: Image.Image, cfg, target_class: int | None = None, patch_size: int | None = None, stride: int | None = None):

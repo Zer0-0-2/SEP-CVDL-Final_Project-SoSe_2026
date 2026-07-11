@@ -733,10 +733,11 @@ if __name__ == "__main__":
     del model_13, optimizer_13, scheduler_13, trainer_13
     torch.cuda.empty_cache()
     """
-    # model 14: BitFit (Bias and LayerNorm tuning)
+    # bitfit but included layernorm because it won't work for some reason if not included
+    # should not skew the result too much -_-
     model_14 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
     for name, param in model_14.named_parameters():
-        if "bias" not in name and "head" not in name:
+        if "bias" not in name and "head" not in name and "norm" not in name:
             param.requires_grad = False
 
     optimizer_14 = optim.AdamW(
@@ -982,11 +983,12 @@ if __name__ == "__main__":
     del model_24, optimizer_24, scheduler_24, trainer_24
     torch.cuda.empty_cache()
     """
-    # bitfit
+    # bitfit but included layernorm because it won't work for some reason if not included
+    # should not skew the result too much -_-
     # https://arxiv.org/abs/2106.10199
     model_25 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
     for name, param in model_25.named_parameters():
-        if "bias" not in name and "head" not in name:
+        if "bias" not in name and "head" not in name and "norm" not in name:
             param.requires_grad = False
     optimizer_25 = optim.AdamW(
         filter(lambda p: p.requires_grad, model_25.parameters()), lr=1e-3, weight_decay=0

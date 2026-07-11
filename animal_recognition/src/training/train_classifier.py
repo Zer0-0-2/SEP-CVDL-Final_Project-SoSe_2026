@@ -732,3 +732,5 @@ if __name__ == "__main__":
 
     del model_13, optimizer_13, scheduler_13, trainer_13
     torch.cuda.empty_cache()
+
+    print("foo")

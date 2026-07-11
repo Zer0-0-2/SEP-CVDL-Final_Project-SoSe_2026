@@ -1,6 +1,12 @@
 """
 Creates a test dataset of exactly 100 images for 20 animal breeds.
-The images are pulled from vetted huggingface datasets.
+The images are pulled from vetted huggingface datasets (Oxford Pets, Stanford Dogs and Imagenet1k)
+and saved in the same folder structure as the trainin dataset.
+
+NOTE/WARNING TO ANYONE RUNNING THIS: this script is incredibly unoptimized because it has to stream through imagenet1k instead of being
+able to download the images directly by label.
+It is incredibly memory intensive (took my 32 gb of ram and 20gb of swap memory) and took 30 minutes to run.
+Since this is a one time operation I did not bother optimizing it, since i will be sharing the zipped dataset with the team anyway.
 """
 
 import os
@@ -55,21 +61,23 @@ def pull_from_huggingface(
     images_to_skip_per_class=None,
     target_image_counts_per_class=None,
 ):
+    # for tiger cat skip first 200 images because they are already in the training dataset
     if images_to_skip_per_class is None:
         images_to_skip_per_class = {}
     if target_image_counts_per_class is None:
         target_image_counts_per_class = {}
-        
-    # This helper streams or downloads datasets from huggingface.
+
     print(f"Loading {huggingface_repo}...")
-    
-    # Create reverse lookup to find our target class index from the dataset's native label
-    label_to_class_index = {label: class_index for class_index, label in index_to_label_mapping.items()}
+
+    # Create reverse lookup to find the target class index from the dataset's native label
+    label_to_class_index = {
+        label: class_index for class_index, label in index_to_label_mapping.items()
+    }
     dataset = load_dataset(huggingface_repo, split=dataset_split, streaming=is_streaming)
 
     for image_record in dataset:
         current_image_label = image_record[label_column_name]
-        
+
         if resolve_integer_labels_to_strings:
             current_image_label = dataset.features[label_column_name].int2str(current_image_label)
 
@@ -85,13 +93,21 @@ def pull_from_huggingface(
                 save_image_function(image_record[image_column_name], class_index)
                 images_downloaded_per_class[class_index] += 1
 
-                if is_streaming and sum(images_downloaded_per_class[k] for k in index_to_label_mapping.keys()) % 10 == 0:
+                if (
+                    is_streaming
+                    and sum(images_downloaded_per_class[k] for k in index_to_label_mapping.keys())
+                    % 10
+                    == 0
+                ):
                     print(
                         f"Streaming progress for {huggingface_repo}: {images_downloaded_per_class[class_index]}/{current_target_count} for class {class_index}"
                     )
 
         # Early exit if we have found enough images for all requested classes
-        if all(images_downloaded_per_class[k] >= target_image_counts_per_class.get(k, TARGET_PER_CLASS) for k in index_to_label_mapping.keys()):
+        if all(
+            images_downloaded_per_class[k] >= target_image_counts_per_class.get(k, TARGET_PER_CLASS)
+            for k in index_to_label_mapping.keys()
+        ):
             break
 
 

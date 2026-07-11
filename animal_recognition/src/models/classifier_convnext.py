@@ -68,3 +68,6 @@ class ConvNextClassifier(nn.Module):
             confidences, class_indices = torch.max(probabilities, dim=1)
 
         return confidences, class_indices
+    
+    def get_last_conv_layer(self) -> nn.Module:
+        return self.model.stages[-1].blocks[-1].conv_dw

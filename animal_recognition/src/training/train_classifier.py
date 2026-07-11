@@ -35,7 +35,7 @@ class ClassifierTrainer:
         weight_decay: float = 1e-4,
         label_smoothing: float = 0.0,
         image_size: int = 224,
-        augmentation_file: str = "vetted",
+        augmentation_file: str = "stronger",
         optimizer=None,
         scheduler=None,
     ):
@@ -482,7 +482,7 @@ if __name__ == "__main__":
     )
     del model_3, optimizer_3, scheduler_3, trainer_scratch_optimized_3
     torch.cuda.empty_cache()
-    """
+
 
     # GCViT (normal finetuning, nothing special)
     model_4 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
@@ -497,7 +497,7 @@ if __name__ == "__main__":
         optimizer=optimizer_4,
         scheduler=scheduler_4,
         batch_size=32,
-        augmentation_file="vetted",
+        augmentation_file="stronger",
     )
     trainer_4.train(epochs=150, note="gcvit_tiny_standard_finetune")
 
@@ -537,7 +537,7 @@ if __name__ == "__main__":
         optimizer=optimizer_6,
         scheduler=scheduler_6,
         batch_size=32,
-        augmentation_file="vetted",
+        augmentation_file="stronger",
     )
     trainer_6.train(epochs=150, note="gcvit_tiny_aggressive_finetune")
 
@@ -562,7 +562,7 @@ if __name__ == "__main__":
         optimizer=optimizer_7,
         scheduler=scheduler_7,
         batch_size=32,
-        augmentation_file="vetted",
+        augmentation_file="stronger",
     )
     trainer_7.train(epochs=150, note="gcvit_tiny_linear_probe")
 
@@ -687,7 +687,7 @@ if __name__ == "__main__":
         scheduler=scheduler_12,
         batch_size=32,
         label_smoothing=0.1,
-        augmentation_file="vetted",
+        augmentation_file="stronger",
     )
     trainer_12.train(epochs=150, note="gcvit_tiny_bottom_freeze")
 
@@ -732,5 +732,276 @@ if __name__ == "__main__":
 
     del model_13, optimizer_13, scheduler_13, trainer_13
     torch.cuda.empty_cache()
+    """
+    # model 14: BitFit (Bias and LayerNorm tuning)
+    model_14 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
+    for name, param in model_14.named_parameters():
+        if "bias" not in name and "head" not in name:
+            param.requires_grad = False
 
-    print("foo")
+    optimizer_14 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_14.parameters()), lr=1e-3, weight_decay=0
+    )
+    scheduler_14 = cosine_lr.CosineLRScheduler(
+        optimizer_14, t_initial=140, lr_min=1e-5, warmup_t=10, warmup_lr_init=1e-4
+    )
+
+    trainer_14 = ClassifierTrainer(
+        model=model_14,
+        optimizer=optimizer_14,
+        scheduler=scheduler_14,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_14.train(epochs=150, note="gcvit_tiny_bitfit")
+
+    del model_14, optimizer_14, scheduler_14, trainer_14
+    torch.cuda.empty_cache()
+
+    # ----------------------------------------------------------- CONVNEXT ------------------------------------------------
+    # SAME IDEAS AS ABOVE
+
+    """
+    # Standard finetuning
+    model_15 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    optimizer_15 = optim.AdamW(model_15.parameters(), lr=1e-4, weight_decay=1e-4)
+    scheduler_15 = cosine_lr.CosineLRScheduler(
+        optimizer_15, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+    trainer_15 = ClassifierTrainer(
+        model=model_15,
+        optimizer=optimizer_15,
+        scheduler=scheduler_15,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_15.train(epochs=150, note="convnextv2_tiny_standard_finetune")
+
+    del model_15, optimizer_15, scheduler_15, trainer_15
+    torch.cuda.empty_cache()
+
+    # conservative finetuning 
+    model_16 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    optimizer_16 = optim.AdamW(model_16.parameters(), lr=1e-5, weight_decay=5e-4)
+    scheduler_16 = cosine_lr.CosineLRScheduler(
+        optimizer_16, t_initial=140, lr_min=1e-7, warmup_t=10, warmup_lr_init=1e-6
+    )
+    trainer_16 = ClassifierTrainer(
+        model=model_16,
+        optimizer=optimizer_16,
+        scheduler=scheduler_16,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_16.train(epochs=150, note="convnextv2_tiny_conservative_finetune")
+
+    del model_16, optimizer_16, scheduler_16, trainer_16
+    torch.cuda.empty_cache()
+
+    # agressive finetuning 
+    model_17 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    optimizer_17 = optim.AdamW(model_17.parameters(), lr=5e-4, weight_decay=1e-4)
+    scheduler_17 = cosine_lr.CosineLRScheduler(
+        optimizer_17, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=5e-5
+    )
+    trainer_17 = ClassifierTrainer(
+        model=model_17,
+        optimizer=optimizer_17,
+        scheduler=scheduler_17,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_17.train(epochs=150, note="convnextv2_tiny_aggressive_finetune")
+
+    del model_17, optimizer_17, scheduler_17, trainer_17
+    torch.cuda.empty_cache()
+
+    # linear probe 
+    model_18 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    for name, param in model_18.named_parameters():
+        if "head" not in name:
+            param.requires_grad = False
+    optimizer_18 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_18.parameters()), lr=1e-3, weight_decay=1e-4
+    )
+    scheduler_18 = cosine_lr.CosineLRScheduler(
+        optimizer_18, t_initial=140, lr_min=1e-5, warmup_t=10, warmup_lr_init=1e-4
+    )
+    trainer_18 = ClassifierTrainer(
+        model=model_18,
+        optimizer=optimizer_18,
+        scheduler=scheduler_18,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_18.train(epochs=150, note="convnextv2_tiny_linear_probe")
+
+    del model_18, optimizer_18, scheduler_18, trainer_18
+    torch.cuda.empty_cache()
+
+    # Partial freeze (freeze head and stage 3)
+    model_19 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    for name, param in model_19.named_parameters():
+        if "head" not in name and "stages.3" not in name:
+            param.requires_grad = False
+    optimizer_19 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_19.parameters()), lr=1e-4, weight_decay=1e-4
+    )
+    scheduler_19 = cosine_lr.CosineLRScheduler(
+        optimizer_19, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+    trainer_19 = ClassifierTrainer(
+        model=model_19,
+        optimizer=optimizer_19,
+        scheduler=scheduler_19,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_19.train(epochs=150, note="convnextv2_tiny_partial_freeze")
+
+    del model_19, optimizer_19, scheduler_19, trainer_19
+    torch.cuda.empty_cache()
+
+    # custom weight decay
+    model_20 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    decay_20 = []
+    no_decay_20 = []
+    for name, param in model_20.named_parameters():
+        if not param.requires_grad:
+            continue
+        if len(param.shape) == 1 or name.endswith(".bias") or "grn" in name:
+            no_decay_20.append(param)
+        else:
+            decay_20.append(param)
+    optimizer_20 = optim.AdamW(
+        [{"params": decay_20, "weight_decay": 5e-4}, {"params": no_decay_20, "weight_decay": 0.0}],
+        lr=1e-4,
+    )
+    scheduler_20 = cosine_lr.CosineLRScheduler(
+        optimizer_20, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+    trainer_20 = ClassifierTrainer(
+        model=model_20,
+        optimizer=optimizer_20,
+        scheduler=scheduler_20,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_20.train(epochs=150, note="convnextv2_tiny_custom_wd")
+
+    del model_20, optimizer_20, scheduler_20, trainer_20
+    torch.cuda.empty_cache()
+
+    # long warmup 
+    model_21 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    optimizer_21 = optim.AdamW(model_21.parameters(), lr=1e-4, weight_decay=1e-4)
+    scheduler_21 = cosine_lr.CosineLRScheduler(
+        optimizer_21, t_initial=140, lr_min=1e-6, warmup_t=20, warmup_lr_init=1e-6
+    )
+    trainer_21 = ClassifierTrainer(
+        model=model_21,
+        optimizer=optimizer_21,
+        scheduler=scheduler_21,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_21.train(epochs=150, note="convnextv2_tiny_long_warmup")
+
+    del model_21, optimizer_21, scheduler_21, trainer_21
+    torch.cuda.empty_cache()
+
+    # like in gcvit paper, but for convnext 
+    model_22 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    optimizer_22 = optim.AdamW(model_22.parameters(), lr=1e-4, weight_decay=1e-4)
+    scheduler_22 = StepLRScheduler(optimizer_22, decay_t=30, decay_rate=0.5)
+    trainer_22 = ClassifierTrainer(
+        model=model_22,
+        optimizer=optimizer_22,
+        scheduler=scheduler_22,
+        batch_size=32,
+        label_smoothing=0.1,
+        augmentation_file="stronger",
+    )
+    trainer_22.train(epochs=100, patience=5, note="convnextv2_tiny_paper_rep")
+
+    del model_22, optimizer_22, scheduler_22, trainer_22
+    torch.cuda.empty_cache()
+
+    # freze first layers 
+    model_23 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    for name, param in model_23.named_parameters():
+        if "stages.0" in name or "stages.1" in name or "stem" in name:
+            param.requires_grad = False
+    optimizer_23 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_23.parameters()), lr=1e-4, weight_decay=1e-4
+    )
+    scheduler_23 = cosine_lr.CosineLRScheduler(
+        optimizer_23, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+    trainer_23 = ClassifierTrainer(
+        model=model_23,
+        optimizer=optimizer_23,
+        scheduler=scheduler_23,
+        batch_size=32,
+        label_smoothing=0.1,
+        augmentation_file="stronger",
+    )
+    trainer_23.train(epochs=150, note="convnextv2_tiny_bottom_freeze")
+
+    del model_23, optimizer_23, scheduler_23, trainer_23
+    torch.cuda.empty_cache()
+
+    # custom learning rate depending on the layer (idk if that will work, sounds interesting though) 
+    model_24 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    param_groups_24 = []
+    for name, param in model_24.named_parameters():
+        if not param.requires_grad:
+            continue
+        lr_scale = 1.0
+        if "stem" in name or "stages.0" in name:
+            lr_scale = 0.1
+        elif "stages.1" in name:
+            lr_scale = 0.2
+        elif "stages.2" in name:
+            lr_scale = 0.5
+        param_groups_24.append({"params": [param], "lr": 1e-4 * lr_scale, "weight_decay": 1e-4})
+    optimizer_24 = optim.AdamW(param_groups_24)
+    scheduler_24 = cosine_lr.CosineLRScheduler(
+        optimizer_24, t_initial=140, lr_min=1e-6, warmup_t=10, warmup_lr_init=1e-5
+    )
+    trainer_24 = ClassifierTrainer(
+        model=model_24,
+        optimizer=optimizer_24,
+        scheduler=scheduler_24,
+        batch_size=32,
+        label_smoothing=0.1,
+        augmentation_file="stronger",
+    )
+    trainer_24.train(epochs=150, note="convnextv2_tiny_layer_decay")
+
+    del model_24, optimizer_24, scheduler_24, trainer_24
+    torch.cuda.empty_cache()
+    """
+    # bitfit
+    # https://arxiv.org/abs/2106.10199
+    model_25 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
+    for name, param in model_25.named_parameters():
+        if "bias" not in name and "head" not in name:
+            param.requires_grad = False
+    optimizer_25 = optim.AdamW(
+        filter(lambda p: p.requires_grad, model_25.parameters()), lr=1e-3, weight_decay=0
+    )
+    scheduler_25 = cosine_lr.CosineLRScheduler(
+        optimizer_25, t_initial=140, lr_min=1e-5, warmup_t=10, warmup_lr_init=1e-4
+    )
+    trainer_25 = ClassifierTrainer(
+        model=model_25,
+        optimizer=optimizer_25,
+        scheduler=scheduler_25,
+        batch_size=32,
+        augmentation_file="stronger",
+    )
+    trainer_25.train(epochs=150, note="convnextv2_tiny_bitfit")
+
+    del model_25, optimizer_25, scheduler_25, trainer_25
+    torch.cuda.empty_cache()

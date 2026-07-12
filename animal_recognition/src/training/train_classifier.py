@@ -318,7 +318,6 @@ class ClassifierTrainer:
 
 if __name__ == "__main__":
     # use this more compact and modular syntax from now on
-    """
     model_0 = ConvNextClassifier(pretrained=False, model_name="convnextv2_tiny")
 
     optimizer_0 = optim.AdamW(model_0.parameters(), lr=1e-4, weight_decay=5e-4)
@@ -981,7 +980,6 @@ if __name__ == "__main__":
 
     del model_24, optimizer_24, scheduler_24, trainer_24
     torch.cuda.empty_cache()
-    """
     # bitfit but included layernorm because it won't work for some reason if not included
     # should not skew the result too much -_-
     # https://arxiv.org/abs/2106.10199

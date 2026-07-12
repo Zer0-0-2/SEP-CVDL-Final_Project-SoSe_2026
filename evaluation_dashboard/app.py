@@ -1,0 +1,54 @@
+import os
+import pickle
+from pathlib import Path
+
+from config import CACHE_FILE, WEIGHTS_DIR, evaluation_cache
+from utils import get_model_list, compute_sha256
+from inference import precompute_all_models_batched
+from ui import create_ui, custom_css, my_theme
+
+if __name__ == "__main__":
+    CACHE_DIR = Path("/app/cache_data")
+    CACHE_DIR.mkdir(exist_ok=True)
+    
+    print("Computing SHA256 hashes for all available models...")
+    models = get_model_list()
+    model_hashes = {}
+    for w in models:
+        model_hashes[w] = compute_sha256(WEIGHTS_DIR / w)
+        
+    disk_cache = {}
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "rb") as f:
+                disk_cache = pickle.load(f)
+            print("Successfully read disk cache structure.")
+        except Exception as e:
+            print(f"Failed to read disk cache {e}")
+            disk_cache = {}
+            
+    models_to_compute = []
+    
+    print("Validating cache with SHA256 hashes...")
+    for w in models:
+        current_hash = model_hashes[w]
+        if w in disk_cache and disk_cache[w][0] == current_hash:
+            evaluation_cache[w] = disk_cache[w][1]
+        else:
+            models_to_compute.append(w)
+            
+    if models_to_compute:
+        print(f"Found {len(models_to_compute)} new or modified models requiring evaluation.")
+        print("Pre-computing evaluations using batched GPU inference. This will take a few minutes...")
+        precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, chunk_size=3)
+        
+        print("Saving updated evaluation cache to disk...")
+        with open(CACHE_FILE, "wb") as f:
+            pickle.dump(disk_cache, f)
+        print("Cache saved successfully!")
+    else:
+        print("All models are cached and verified. Skipping pre-computation.")
+        
+    print("Launching dashboard...")
+    demo = create_ui()
+    demo.launch(server_name="0.0.0.0", server_port=7860, css=custom_css, theme=my_theme)

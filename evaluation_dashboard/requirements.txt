@@ -1,0 +1,7 @@
+gradio
+timm
+pandas
+scikit-learn
+Pillow
+numpy<2
+albumentations

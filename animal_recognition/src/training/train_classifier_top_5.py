@@ -9,6 +9,7 @@ import torch.optim as optim
 
 # Import the specific scheduler class directly
 from timm.scheduler import cosine_lr
+from timm.scheduler.step_lr import StepLRScheduler
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
@@ -73,83 +74,65 @@ def main():
     del model_2, optimizer_2, scheduler_2, trainer_2
     torch.cuda.empty_cache()
 
-    # 3. ConvNeXtV2 Base - BitFit
-    # muP LR Scaling: NOT APPLIED (Weight matrices are frozen)
-    model_3 = ConvNextClassifier(pretrained=True, model_name="convnextv2_base")
+    # 3. GCViT Base Paper Repllication
 
-    for name, param in model_3.named_parameters():
-        if (
-            "bias" in name
-            or "head" in name
-            or "norm.weight" in name
-            or "grn.weight" in name
-            or "stem.1.weight" in name
-            or "downsample.0.weight" in name
-        ):
-            continue
-        param.requires_grad = False
+    # actual config from the fine grained cat classification paper
+    model_3 = GCViTClassifier(pretrained=True, model_name="gcvit_base")
 
-    optimizer_3 = optim.AdamW(
-        filter(lambda p: p.requires_grad, model_3.parameters()), lr=1e-3, weight_decay=0
-    )
-    scheduler_3 = cosine_lr.CosineLRScheduler(
-        optimizer_3, t_initial=140, lr_min=1e-5, warmup_t=10, warmup_lr_init=1e-4
-    )
+    optimizer_3 = optim.AdamW(model_3.parameters(), lr=5e-5, weight_decay=1e-4)
+
+    # Step-wise decay, e.g., decay by 0.5 every 30 epochs
+
+    scheduler_3 = StepLRScheduler(optimizer_3, decay_t=30, decay_rate=0.5)
 
     trainer_3 = ClassifierTrainer(
         model=model_3,
         optimizer=optimizer_3,
         scheduler=scheduler_3,
         batch_size=16,
+        label_smoothing=0.1,
         augmentation_file="stronger",
     )
-    trainer_3.train(epochs=150, note="convnextv2_base_bitfit")
+
+    trainer_3.train(epochs=100, patience=5, note="gcvit_base_paper_rep")
 
     del model_3, optimizer_3, scheduler_3, trainer_3
     torch.cuda.empty_cache()
 
-    # 4. ConvNeXtV2 Base - Conservative Full Finetuning
-    # muP LR Scaling: 0.75 (Base LR: 1e-5 -> 7.5e-6)
-    model_4 = ConvNextClassifier(pretrained=True, model_name="convnextv2_base")
+    # 4. GCViT Base - Agressive Finetuning
 
-    optimizer_4 = optim.AdamW(model_4.parameters(), lr=7.5e-6, weight_decay=5e-4)
+    # larger LR = aggressive finetuning
+    model_4 = GCViTClassifier(pretrained=True, model_name="gcvit_base")
+
+    # Apply muP scaling (0.5) to the base learning rate
+    optimizer_4 = optim.AdamW(model_4.parameters(), lr=2.5e-4, weight_decay=1e-4)
+
+    # Apply muP scaling (0.5) to lr_min and warmup_lr_init
     scheduler_4 = cosine_lr.CosineLRScheduler(
-        optimizer_4, t_initial=140, lr_min=7.5e-8, warmup_t=10, warmup_lr_init=7.5e-7
+        optimizer_4, t_initial=140, lr_min=5e-7, warmup_t=10, warmup_lr_init=2.5e-5
     )
 
     trainer_4 = ClassifierTrainer(
         model=model_4,
         optimizer=optimizer_4,
         scheduler=scheduler_4,
-        batch_size=16,
+        batch_size=16,  # Reduced for Base model VRAM safety
         augmentation_file="stronger",
     )
-    trainer_4.train(epochs=150, note="convnextv2_base_conservative_finetune")
+    trainer_4.train(epochs=150, note="gcvit_base_aggressive_finetune")
 
     del model_4, optimizer_4, scheduler_4, trainer_4
     torch.cuda.empty_cache()
 
-    # ConvNeXtV2 Base - Standard Finetuning with Custom Weight Decay
-    # muP LR Scaling: 0.75 (Base LR: 1e-4 -> 7.5e-5)
+    # 5. ConvNeXtV2 Base - Conservative Finetuning
+
+    # muP LR Scaling: 0.75 (Base LR: 1e-5 -> 7.5e-6)
     model_5 = ConvNextClassifier(pretrained=True, model_name="convnextv2_base")
-    decay_5 = []
-    no_decay_5 = []
-    for name, param in model_5.named_parameters():
-        if not param.requires_grad:
-            continue
-        if len(param.shape) == 1 or name.endswith(".bias") or "grn" in name:
-            no_decay_5.append(param)
-        else:
-            decay_5.append(param)
 
-    optimizer_5 = optim.AdamW(
-        [{"params": decay_5, "weight_decay": 5e-4}, {"params": no_decay_5, "weight_decay": 0.0}],
-        lr=7.5e-5,
-    )
+    optimizer_5 = optim.AdamW(model_5.parameters(), lr=7.5e-6, weight_decay=5e-4)
     scheduler_5 = cosine_lr.CosineLRScheduler(
-        optimizer_5, t_initial=140, lr_min=7.5e-7, warmup_t=10, warmup_lr_init=7.5e-6
+        optimizer_5, t_initial=140, lr_min=7.5e-8, warmup_t=10, warmup_lr_init=7.5e-7
     )
-
     trainer_5 = ClassifierTrainer(
         model=model_5,
         optimizer=optimizer_5,
@@ -157,14 +140,13 @@ def main():
         batch_size=16,
         augmentation_file="stronger",
     )
-    trainer_5.train(epochs=150, note="convnextv2_base_custom_wd_finetune")
+    trainer_5.train(epochs=150, note="convnextv2_base_conservative_finetune")
 
     del model_5, optimizer_5, scheduler_5, trainer_5
     torch.cuda.empty_cache()
 
     # ConvNeXtV2 Base - FROM RANDOM WEIGHTS
 
-    """
     model_base_scratch = ConvNextClassifier(pretrained=False, model_name="convnextv2_base")
 
     # separate parameters for weight decay
@@ -217,7 +199,6 @@ def main():
         epochs=150,
         note="cosinelr_with_warmup_optimized_weight_decay_base_scratch",
     )
-    """
 
 
 if __name__ == "__main__":

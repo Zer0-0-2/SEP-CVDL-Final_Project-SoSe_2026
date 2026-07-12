@@ -9,6 +9,7 @@ import torch.optim as optim
 
 # Import the specific scheduler class directly
 from timm.scheduler import cosine_lr
+from timm.scheduler.step_lr import StepLRScheduler
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 
@@ -644,8 +645,6 @@ if __name__ == "__main__":
 
     del model_10, optimizer_10, scheduler_10, trainer_10
     torch.cuda.empty_cache()
-
-    from timm.scheduler.step_lr import StepLRScheduler
 
     # actual config from the fine grained cat classification paper
     model_11 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")

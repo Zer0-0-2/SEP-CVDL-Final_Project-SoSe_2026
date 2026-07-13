@@ -77,7 +77,7 @@ def main():
                 model_name=model_name,
                 lr=lr,
                 scheduler_type="cosine",
-                note=f"{model_name}_experiment_base_{lr}",
+                note=f"{model_name}_bitfit_experiment_base_{lr}",
                 warmup_t=10,
             )
 
@@ -86,7 +86,7 @@ def main():
                 model_name=model_name,
                 lr=lr,
                 scheduler_type="cosine",
-                note=f"{model_name}_experiment_smaller_warmup_{lr}",
+                note=f"{model_name}_bitfit_experiment_smaller_warmup_{lr}",
                 warmup_t=5,
             )
 
@@ -95,7 +95,7 @@ def main():
                 model_name=model_name,
                 lr=lr,
                 scheduler_type="steplr",
-                note=f"{model_name}_experiment_smaller_warmup_steplr_{lr}",
+                note=f"{model_name}_bitfit_experiment_smaller_warmup_steplr_{lr}",
                 warmup_t=5,
             )
 

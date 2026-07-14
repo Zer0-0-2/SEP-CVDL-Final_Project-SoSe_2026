@@ -2,8 +2,14 @@ import gradio as gr
 import pandas as pd
 from config import evaluation_cache, CLASSES
 from inference import analyze_image_all_models
-from utils import get_model_list, format_model_name
+from utils import get_model_list, format_model_name, get_experiment_folders
 
+def update_leaderboard(experiment):
+    return get_leaderboard_df(experiment)
+
+def update_model_dropdown(experiment):
+    choices = [(format_model_name(w), w) for w in get_model_list(experiment)]
+    return gr.update(choices=choices, value=None)
 def update_dashboard(weights_name):
     if not weights_name or weights_name not in evaluation_cache:
         return "N/A", "N/A", "N/A", "N/A", pd.DataFrame(), gr.update(choices=["All"], value="All"), []
@@ -34,19 +40,22 @@ def filter_errors(weights_name, true_class_filter):
     gallery_items = [(m["image_path"], f"Pred: {m['pred_label']} (Conf: {m['confidence']:.2f})") for m in misclassifications]
     return gallery_items
 
-def get_leaderboard_df():
+def get_leaderboard_df(experiment="All models"):
     if not evaluation_cache:
         return pd.DataFrame(columns=["Model", "Accuracy", "F1-Score", "Precision", "Recall"])
         
+    allowed_models = set(get_model_list(experiment))
+        
     data = []
     for w, res in evaluation_cache.items():
-        data.append({
-            "Model": format_model_name(w),
-            "Accuracy": res["accuracy"],
-            "F1-Score": res["macro_f1"],
-            "Precision": res["macro_precision"],
-            "Recall": res["macro_recall"]
-        })
+        if w in allowed_models:
+            data.append({
+                "Model": format_model_name(w),
+                "Accuracy": res["accuracy"],
+                "F1-Score": res["macro_f1"],
+                "Precision": res["macro_precision"],
+                "Recall": res["macro_recall"]
+            })
     df = pd.DataFrame(data)
     
     df = df.sort_values(by="F1-Score", ascending=False).reset_index(drop=True)
@@ -146,6 +155,9 @@ def create_ui():
         gr.HTML("<h1 style='text-align: center; font-size: 2.5rem; margin-bottom: 0.5rem;'>🐾 Cat and Dog Breed Classifier Dashboard</h1>")
         gr.HTML("<p style='text-align: center; color: #94a3b8; margin-bottom: 2rem;'>SEP CVDL Catfish Coders</p>")
         
+        experiment_choices = ["All models"] + get_experiment_folders()
+        experiment_selector = gr.Radio(choices=experiment_choices, value="All models", label="Select Experiment", interactive=True)
+        
         with gr.Tabs():
             with gr.TabItem("🏆 Leaderboard"):
                 gr.Markdown("### 🌟 Overall Model Rankings")
@@ -225,9 +237,21 @@ def create_ui():
                         
                 analyze_btn.click(
                     fn=analyze_image_all_models,
-                    inputs=[upload_img],
+                    inputs=[upload_img, experiment_selector],
                     outputs=[multi_model_df]
                 )
                 
-            demo.load(fn=get_leaderboard_df, inputs=None, outputs=[leaderboard_df_ui])
+            demo.load(fn=get_leaderboard_df, inputs=[experiment_selector], outputs=[leaderboard_df_ui])
+            
+            experiment_selector.change(
+                fn=update_leaderboard,
+                inputs=[experiment_selector],
+                outputs=[leaderboard_df_ui]
+            )
+            experiment_selector.change(
+                fn=update_model_dropdown,
+                inputs=[experiment_selector],
+                outputs=[model_dropdown]
+            )
+            
     return demo

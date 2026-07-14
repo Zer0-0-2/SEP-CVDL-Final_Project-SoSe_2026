@@ -8,14 +8,29 @@ def compute_sha256(file_path):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
-def get_model_list():
+def get_experiment_folders():
     if not WEIGHTS_DIR.exists():
         return []
-    weights = list(WEIGHTS_DIR.glob("*.pt"))
-    return [w.name for w in weights]
+    folders = [d.name for d in WEIGHTS_DIR.iterdir() if d.is_dir()]
+    return sorted(folders)
+
+def get_model_list(experiment="All models"):
+    if not WEIGHTS_DIR.exists():
+        return []
+        
+    if experiment == "All models":
+        weights = list(WEIGHTS_DIR.rglob("*.pt"))
+    else:
+        exp_dir = WEIGHTS_DIR / experiment
+        if not exp_dir.exists():
+            return []
+        weights = list(exp_dir.rglob("*.pt"))
+        
+    return [str(w.relative_to(WEIGHTS_DIR)) for w in weights]
 
 def format_model_name(filename):
-    name = filename.replace(".pt", "")
+    from pathlib import Path
+    name = Path(filename).name.replace(".pt", "")
     parts = name.split("_")
     
     arch = "Unknown"

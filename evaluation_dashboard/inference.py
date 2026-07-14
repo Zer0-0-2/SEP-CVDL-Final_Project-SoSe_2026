@@ -221,11 +221,11 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
         gc.collect()
         torch.cuda.empty_cache()
 
-def analyze_image_all_models(image):
+def analyze_image_all_models(image, experiment="All models"):
     val_transforms = get_val_transforms(image_size=224)
     
     img_tensor = val_transforms(image=image)["image"].unsqueeze(0)
-    models = get_model_list()
+    models = get_model_list(experiment)
     
     results = []
     

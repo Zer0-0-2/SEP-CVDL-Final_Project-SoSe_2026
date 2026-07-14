@@ -18,3 +18,5 @@ captum
 datasets
 rich
 gallery-dl
+matplotlib
+Pillow

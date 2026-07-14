@@ -4,11 +4,14 @@ from config import evaluation_cache, CLASSES
 from inference import analyze_image_all_models
 from utils import get_model_list, format_model_name, get_experiment_folders
 
-def update_leaderboard(experiment):
-    return get_leaderboard_df(experiment)
+def update_leaderboard(experiment, show_filenames):
+    return get_leaderboard_df(experiment, show_filenames)
 
-def update_model_dropdown(experiment):
-    choices = [(format_model_name(w), w) for w in get_model_list(experiment)]
+def update_model_dropdown(experiment, show_filenames):
+    if show_filenames:
+        choices = [(w, w) for w in get_model_list(experiment)]
+    else:
+        choices = [(format_model_name(w), w) for w in get_model_list(experiment)]
     return gr.update(choices=choices, value=None)
 def update_dashboard(weights_name):
     if not weights_name or weights_name not in evaluation_cache:
@@ -40,7 +43,7 @@ def filter_errors(weights_name, true_class_filter):
     gallery_items = [(m["image_path"], f"Pred: {m['pred_label']} (Conf: {m['confidence']:.2f})") for m in misclassifications]
     return gallery_items
 
-def get_leaderboard_df(experiment="All models"):
+def get_leaderboard_df(experiment="All models", show_filenames=False):
     if not evaluation_cache:
         return pd.DataFrame(columns=["Model", "Accuracy", "F1-Score", "Precision", "Recall"])
         
@@ -49,8 +52,9 @@ def get_leaderboard_df(experiment="All models"):
     data = []
     for w, res in evaluation_cache.items():
         if w in allowed_models:
+            model_name = w if show_filenames else format_model_name(w)
             data.append({
-                "Model": format_model_name(w),
+                "Model": model_name,
                 "Accuracy": res["accuracy"],
                 "F1-Score": res["macro_f1"],
                 "Precision": res["macro_precision"],
@@ -155,8 +159,10 @@ def create_ui():
         gr.HTML("<h1 style='text-align: center; font-size: 2.5rem; margin-bottom: 0.5rem;'>🐾 Cat and Dog Breed Classifier Dashboard</h1>")
         gr.HTML("<p style='text-align: center; color: #94a3b8; margin-bottom: 2rem;'>SEP CVDL Catfish Coders</p>")
         
-        experiment_choices = ["All models"] + get_experiment_folders()
-        experiment_selector = gr.Radio(choices=experiment_choices, value="All models", label="Select Experiment", interactive=True)
+        with gr.Row():
+            experiment_choices = ["All models"] + get_experiment_folders()
+            experiment_selector = gr.Radio(choices=experiment_choices, value="All models", label="Select Experiment", interactive=True, scale=3)
+            show_filenames_toggle = gr.Checkbox(label="Show raw file names", value=False, interactive=True, scale=1)
         
         with gr.Tabs():
             with gr.TabItem("🏆 Leaderboard"):
@@ -237,20 +243,31 @@ def create_ui():
                         
                 analyze_btn.click(
                     fn=analyze_image_all_models,
-                    inputs=[upload_img, experiment_selector],
+                    inputs=[upload_img, experiment_selector, show_filenames_toggle],
                     outputs=[multi_model_df]
                 )
                 
-            demo.load(fn=get_leaderboard_df, inputs=[experiment_selector], outputs=[leaderboard_df_ui])
+            demo.load(fn=get_leaderboard_df, inputs=[experiment_selector, show_filenames_toggle], outputs=[leaderboard_df_ui])
             
             experiment_selector.change(
                 fn=update_leaderboard,
-                inputs=[experiment_selector],
+                inputs=[experiment_selector, show_filenames_toggle],
                 outputs=[leaderboard_df_ui]
             )
             experiment_selector.change(
                 fn=update_model_dropdown,
-                inputs=[experiment_selector],
+                inputs=[experiment_selector, show_filenames_toggle],
+                outputs=[model_dropdown]
+            )
+            
+            show_filenames_toggle.change(
+                fn=update_leaderboard,
+                inputs=[experiment_selector, show_filenames_toggle],
+                outputs=[leaderboard_df_ui]
+            )
+            show_filenames_toggle.change(
+                fn=update_model_dropdown,
+                inputs=[experiment_selector, show_filenames_toggle],
                 outputs=[model_dropdown]
             )
             

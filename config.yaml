@@ -92,7 +92,7 @@ data:
 # -------------------------------------------------------------
 xai:
   enabled: false
-  # IMPLEMENTED: 'gradcam_xai' | 'occlusion_xai'
+  # IMPLEMENTED: 'gradcam_xai' | 'occlusion_xai' | 'layer_activation_xai'
   methode: gradcam_xai
   target_class: null    # null = use the model's own predicted class
   occlusion:

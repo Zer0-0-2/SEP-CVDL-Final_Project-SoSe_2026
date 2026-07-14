@@ -102,7 +102,7 @@ Swap the classifier and OOD method by editing `config.yaml` — no code changes 
         ├── evaluation/                  
         │   ├── detector_eval_yoloworld.py     # Script for evaluating yoloworld 
         │   ├── detector_eval.ipynb     # Ipynb file to evaluate yoloworld 
-            └── inference_xxx  .py      # Various temporary inference scripts to test models against provided images
+        |   └── inference_xxx  .py      # Various temporary inference scripts to test models against provided images
         └── xai/                        
             └── gradcam_wrapper.py      # GradCAMExplainer (TODO)
 ```

@@ -2,7 +2,7 @@ import gradio as gr
 import pandas as pd
 from config import evaluation_cache, CLASSES
 from inference import analyze_image_all_models
-from utils import get_model_list, format_model_name, get_experiment_folders
+from utils import get_model_list, format_model_name, get_experiment_folders, format_experiment_name
 from gradio_gpu_monitor import GPUMonitor
 
 def update_leaderboard(experiment, show_filenames):
@@ -46,15 +46,22 @@ def filter_errors(weights_name, true_class_filter):
 
 def get_leaderboard_df(experiment="All models", show_filenames=False):
     if not evaluation_cache:
-        return pd.DataFrame(columns=["Model", "Accuracy", "F1-Score", "Precision", "Recall"])
+        return pd.DataFrame(columns=["Stage", "Model", "Accuracy", "F1-Score", "Precision", "Recall"])
         
     allowed_models = set(get_model_list(experiment))
         
+    from pathlib import Path
     data = []
     for w, res in evaluation_cache.items():
         if w in allowed_models:
             model_name = w if show_filenames else format_model_name(w)
+            
+            experiment_name = str(Path(w).parent)
+            if not show_filenames:
+                experiment_name = format_experiment_name(experiment_name)
+                
             data.append({
+                "Stage": experiment_name,
                 "Model": model_name,
                 "Accuracy": res["accuracy"],
                 "F1-Score": res["macro_f1"],
@@ -161,7 +168,8 @@ def create_ui():
         gr.HTML("<p style='text-align: center; color: #94a3b8; margin-bottom: 2rem;'>SEP CVDL Catfish Coders</p>")
         
         with gr.Row():
-            experiment_choices = ["All models"] + get_experiment_folders()
+            experiment_folders = get_experiment_folders()
+            experiment_choices = [("All Models", "All models")] + [(format_experiment_name(f), f) for f in experiment_folders]
             experiment_selector = gr.Radio(choices=experiment_choices, value="All models", label="Select Experiment", interactive=True, scale=3)
             show_filenames_toggle = gr.Checkbox(label="Show raw file names", value=False, interactive=True, scale=1)
         
@@ -171,8 +179,8 @@ def create_ui():
                 gr.Markdown("<p style='color: #94a3b8;'>Ranking of all available models based on overall metrics computed across our entire test dataset (Stanford Dogs, Oxford Pets and Imagenet)</p>")
                 leaderboard_df_ui = gr.Dataframe(
                     interactive=False,
-                    headers=["Model", "Accuracy", "F1-Score", "Precision", "Recall"],
-                    datatype=["str", "str", "str", "str", "str"],
+                    headers=["Stage", "Model", "Accuracy", "F1-Score", "Precision", "Recall"],
+                    datatype=["str", "str", "str", "str", "str", "str"],
                     elem_classes="metric-box"
                 )
                 

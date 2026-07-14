@@ -14,6 +14,24 @@ def get_experiment_folders():
     folders = [d.name for d in WEIGHTS_DIR.iterdir() if d.is_dir()]
     return sorted(folders)
 
+def format_experiment_name(folder_name):
+    folder_name = str(folder_name)
+    if not folder_name or folder_name == "." or folder_name == "Base":
+        return "Error"
+        
+    mappings = {
+        "BitFit_Tiny": "BitFit (Tiny)",
+        "BitFit_Base": "BitFit (Base)",
+        "Initial_Experiments": "Initial Experiments",
+        "Initial_Experiments_Top_5_Failed": "Initial Experiments (Top 5, Failed)",
+        "Initial_Experiments_Top_5": "Initial Experiments (Top 5)"
+    }
+    
+    if folder_name in mappings:
+        return mappings[folder_name]
+        
+    return folder_name.replace("_", " ")
+
 def get_model_list(experiment="All models"):
     if not WEIGHTS_DIR.exists():
         return []

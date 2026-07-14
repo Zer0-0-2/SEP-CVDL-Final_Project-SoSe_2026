@@ -188,7 +188,7 @@ if __name__ == "__main__":
     console = Console()
 
     # store metrics for final ranking
-    model_performance = []
+    models_performance = []
 
     for w_path in weights_paths:
         stem = w_path.stem
@@ -220,6 +220,7 @@ if __name__ == "__main__":
 
         y_true, y_pred = [], []
         with torch.no_grad():
+            # prgoress bar 
             for filename, label in tqdm(
                 zip(df["filename"], df["label"]), total=len(df), desc=f"Inference {w_path.name}"
             ):
@@ -242,12 +243,24 @@ if __name__ == "__main__":
             output_dict=True,
         )
         macro_f1 = report_dict["macro avg"]["f1-score"]
+        macro_precision = report_dict["macro avg"]["precision"]
+        macro_recall = report_dict["macro avg"]["recall"]
+        weighted_acc = report_dict["weighted avg"]["recall"]  
+        unweighted_acc = macro_recall 
 
         # save metrics for leaderboard
-        model_performance.append({"name": w_path.name, "acc": acc, "f1": macro_f1})
+        models_performance.append({
+            "name": w_path.name, 
+            "acc": acc, 
+            "f1": macro_f1,
+            "precision": macro_precision,
+            "recall": macro_recall,
+            "weighted_acc": weighted_acc,
+            "unweighted_acc": unweighted_acc
+        })
 
         if old_output:
-            print(f"\nAccuracy: {accuracy_score(y_true, y_pred):.4f}")
+            print(f"\nWeighted Accuracy: {weighted_acc:.4f} | Unweighted Accuracy: {unweighted_acc:.4f}")
             print(
                 classification_report(
                     y_true,
@@ -262,12 +275,12 @@ if __name__ == "__main__":
             print(confusion_matrix(y_true, y_pred, labels=labels))
         else:
             report = report_dict
-            cm = confusion_matrix(y_true, y_pred, labels=labels)
+            confusion_mtrx = confusion_matrix(y_true, y_pred, labels=labels)
 
             console.print(
                 f"\n[bold bright_blue]Evaluation Results for: [white]{w_path.name}[/white][/bold bright_blue]"
             )
-            console.print(f"[bold green]Overall Accuracy: {acc:.4f}[/bold green]\n")
+            console.print(f"[bold green]Weighted Accuracy: {weighted_acc:.4f} | Unweighted Accuracy: {unweighted_acc:.4f}[/bold green]\n")
 
             table = Table(
                 title="Classification Report", show_header=True, header_style="bold magenta"
@@ -319,15 +332,15 @@ if __name__ == "__main__":
                 cm_table.add_column(str(labels[i]), justify="right")
 
             cmap = mpl.colormaps["coolwarm"]
-            max_val = cm.max() if cm.max() > 0 else 1
+            max_val = confusion_mtrx.max() if confusion_mtrx.max() > 0 else 1
             norm = mcolors.Normalize(vmin=0, vmax=max_val)
 
-            for i, row in enumerate(cm):
+            for i, row in enumerate(confusion_mtrx):
                 row_strs = []
                 for val in row:
                     rgba = cmap(norm(val))
                     r, g, b = [int(c * 255) for c in rgba[:3]]
-                    # calculate luminance to choose black or white text for readability
+                    # calculate luminance to choose black or white text for readability: note this was tested on default gnome fedora and kde fedora dark theme
                     lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
                     txt_color = "black" if lum > 0.5 else "white"
                     # format with width of 4 to make the background a nice square-ish block
@@ -335,3 +348,40 @@ if __name__ == "__main__":
                 cm_table.add_row(target_names[i], *row_strs)
 
             console.print(cm_table)
+
+    # Leaderboard
+    if len(weights_paths) > 1:
+        models_performance.sort(key=lambda x: x["f1"], reverse=True)
+        if old_output:
+            print("\n" + "="*80)
+            print("Model Ranking (Sorted by Macro F1-Score)")
+            print("="*80)
+            for rank, model_performance in enumerate(models_performance, 1):
+                print(f"{rank}. {model_performance['name']}")
+                print(f"   F1-Score:       {model_performance['f1']:.4f}")
+                print(f"   Precision:      {model_performance['precision']:.4f}")
+                print(f"   Recall:         {model_performance['recall']:.4f}")
+                print(f"   Weighted Acc:   {model_performance['weighted_acc']:.4f}")
+                print(f"   Unweighted Acc: {model_performance['unweighted_acc']:.4f}\n")
+        else:
+            console.print("\n[bold bright_blue]Model Ranking (Sorted by Macro F1-Score)[/bold bright_blue]")
+            rank_table = Table(show_header=True, header_style="bold magenta")
+            rank_table.add_column("Rank", justify="right", style="dim")
+            rank_table.add_column("Model Name")
+            rank_table.add_column("F1-Score", justify="right")
+            rank_table.add_column("Precision", justify="right")
+            rank_table.add_column("Recall", justify="right")
+            rank_table.add_column("Weighted Acc", justify="right")
+            rank_table.add_column("Unweighted Acc", justify="right")
+            
+            for rank, model_performance in enumerate(models_performance, 1):
+                rank_table.add_row(
+                    str(rank),
+                    model_performance["name"],
+                    f"{model_performance['f1']:.4f}",
+                    f"{model_performance['precision']:.4f}",
+                    f"{model_performance['recall']:.4f}",
+                    f"{model_performance['weighted_acc']:.4f}",
+                    f"{model_performance['unweighted_acc']:.4f}"
+                )
+            console.print(rank_table)

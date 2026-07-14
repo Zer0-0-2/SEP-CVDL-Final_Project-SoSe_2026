@@ -66,50 +66,60 @@ Swap the classifier and OOD method by editing `config.yaml` — no code changes 
 
 ```
 .
-├── config.yaml                        # pipeline routing + all hyperparameters
-├── inference.py                       # fixed evaluation interface (do not change outer structure)
-├── test_dataset.py                    # sanity checks for data pipeline
-├── requirements.txt
-├── README.md
-└── animal_recognition/
-    ├── data/
-    │   ├── raw/                       # training images — one subfolder per breed (not committed)
-    │   ├── processed/                 # train/val split after preprocessing (not committed)
-    │   └── confounders/               # OOD images labelled -1 (not committed)
-    └── src/
-        ├── config.py                  # load_config() → dot-accessible config namespace
-        ├── data/
-        │   ├── dataset.py             # AnimalDataset (torch Dataset)
-        │   ├── augmentations.py       # get_train_transforms / get_val_transforms
-        │   ├── reddit_downloader.py   # gallery-dl scraper for breed subreddits
-        │   └── tiger_cat_downloader.py # ImageNet-1k streaming for Tiger Cat class
+├── config.yaml                         # pipeline routing + all hyperparameters
+├── inference.py                        # fixed evaluation interface (do not change outer structure)
+├── test_dataset.py                     # sanity checks for data pipeline
+├── requirements.txt                    
+├── README.md                           
+└── animal_recognition/                 
+    ├── models/                            
+    │   └── weights/                    # Default Directory to put your .pt weights in
+    ├── data/                           
+    │   ├── raw/                        # training images — one subfolder per breed (not committed)
+    │   ├── processed/                  # output folder of sanitize_scaped_data.py 
+    |   │   ├── rejected/               # rejected images (not used for training)
+    |   |   └── accepted/               # accepted images (used for training)
+    │   └── confounders/                # OOD images labelled -1 (not committed)
+    └── src/                            
+        ├── config.py                   # load_config() → dot-accessible config namespace
+        ├── data/                       
+        │   ├── dataset.py              # AnimalDataset (torch Dataset)
+        │   ├── augmentations_xxx.py    # Various augmenation files
+        │   ├── downloader_reddit.py    # gallery-dl scraper for breed subreddits
+        │   └── downloader_tiger_cat.py # ImageNet-1k streaming for Tiger Cat class
         ├── models/
-        │   ├── detector.py            # AnimalDetector (YOLOv8 wrapper)
-        │   ├── baseline_cnn.py        # BaselineCNN — ResNet-style, trained from scratch
-        │   └── transfer_model.py      # TransferClassifier — timm backbone (TODO)
-        ├── training/
-        │   └── trainer.py             # Trainer — training loop (TODO)
-        ├── ood/
-        │   └── gate.py                # OODGate — softmax threshold / energy (TODO)
-        ├── evaluation/
-        │   └── evaluator.py           # Evaluator — per-class metrics (TODO)
-        └── xai/
-            └── gradcam_wrapper.py     # GradCAMExplainer (TODO)
+        │   ├── baseline_cnn.py         # BaselineCNN - not used 
+        │   ├── classifier_convnext.py  # ConvNextV2 Class used for training (TIMM)
+        │   ├── classifier_gcvit.py     # GCViT Class used for training (TIMM)
+        │   ├── classifier_resnet.py    # ResNet50 (trained just once, not used further)
+        │   ├── yolo.py                 # YOLO26 detector (evaluated, not used in pipeline)
+        │   ├── yoloworld.py            # YoloWorld detector (evaluated, used in pipeline)
+        │   └── transfer_model.py       # TransferClassifier — timm backbone (TODO)
+        ├── training/                   
+        │   └── train_xxx.py            # Various training scripts all derived from train_classifier (Object oriented, parameterized)
+        ├── ood/                        
+        │   └── gate.py                 # OODGate — softmax threshold / energy (TODO)
+        ├── evaluation/                  
+        │   ├── detector_eval_yoloworld.py     # Script for evaluating yoloworld 
+        │   ├── detector_eval.ipynb     # Ipynb file to evaluate yoloworld 
+            └── inference_xxx  .py      # Various temporary inference scripts to test models against provided images
+        └── xai/                        
+            └── gradcam_wrapper.py      # GradCAMExplainer (TODO)
 ```
 
 ---
 
 ## Setup
 
-Requires **Python 3.11**. Python 3.14 fails to build numpy/scipy wheels.
+Requires **a Tkinter-Version of Python**
 
 ```bash
-python3.11 -m venv venv
+python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**AMD GPU (ROCm) users** — replace the pip step with:
+**AMD GPU (ROCm) users** — replace the last step with:
 ```bash
 pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/rocm7.2
 ```
@@ -123,29 +133,21 @@ Adjust the ROCm version suffix to match your installed ROCm (e.g. `rocm6.0`).
 
 Requires `gallery-dl` with a Firefox session cookie:
 ```bash
-pip install gallery-dl
+
 python animal_recognition/src/data/reddit_downloader.py
 ```
 Downloads up to 200 images per class into `animal_recognition/data/raw/<ClassName>/`. Skips classes that already have 200+ images.
 
 ### Tiger Cat (ImageNet-1k)
 
-Tiger Cat has no dedicated subreddit. Images are streamed from the gated ImageNet-1k dataset on HuggingFace (label 282, synset n02123159):
+Tiger Cat has no dedicated subreddit. Images are streamed from the gated ImageNet-1k dataset on HuggingFace. 
 ```bash
 huggingface-cli login      # one-time: accept terms at huggingface.co/datasets/ILSVRC/imagenet-1k first
-python animal_recognition/src/data/tiger_cat_downloader.py
+python animal_recognition/src/data/downloader_tiger_cat.py
 ```
 
-### Confounder images
 
-Not yet collected. Planned sources:
-- ImageNet-1k non-target-animal classes
-- OpenImages v7 non-target species
-- iNaturalist wild animals
 
-Source URLs will be tracked in `animal_recognition/data/confounders/sources.txt`.
-
----
 
 ## Configuration
 
@@ -153,31 +155,19 @@ All pipeline routing and hyperparameters live in `config.yaml`:
 
 ```yaml
 pipeline:
-  classifier: baseline_cnn      # 'baseline_cnn' | 'transfer'
+  classifier: convnextv2_tiny   # adjust depending on the .pt file or whether you want to fine tune on your own
   ood_gate: softmax_threshold   # 'softmax_threshold' | 'temperature_scaling' | 'energy'
 
 classifier:
   transfer:
-    backbone: efficientnet_b3   # any timm model name
+    backbone: convnextv2_tiny   # adjust depending on the .pt file or whether you want to fine tune on your own
 ```
 
 Change `classifier: baseline_cnn` to `classifier: transfer` to route through the transfer model. No other changes needed.
 
 ---
 
-## Running the sanity tests
 
-With mock data already in place (`animal_recognition/data/raw/`), run:
-```bash
-python test_dataset.py
-```
-
-Checks that:
-- Dataset loads and finds all 20 classes
-- `__getitem__` returns the correct tensor shape `[3, 224, 224]` and dtype `float32`
-- Normalisation is applied (values outside `[0, 1]`)
-- Train transforms are random (same image → different tensor)
-- Confounders load with label `-1`
 
 ---
 
@@ -185,18 +175,18 @@ Checks that:
 
 | Component | Status |
 |---|---|
-| `AnimalDetector` (YOLOv8) | Done |
-| `BaselineCNN` (from scratch) | Done |
+| `AnimalDetector` (YOLOvWorld) | Done |
 | `AnimalDataset` | Done |
-| `augmentations.py` | Done |
-| `config.yaml` + `config.py` | Done |
-| `TransferClassifier` (timm) | TODO |
-| `Trainer` | TODO |
+| `Different Augmentations` | Done |
+| `config.yaml` + `config.py` | TODO |
+| `TIMM Models` | Done |
+| `Trainer` | Done |
 | `OODGate` | TODO |
-| `Evaluator` | TODO |
+| `Evaluator` | Done |
 | `GradCAMExplainer` | TODO |
 | Wire `inference.py::Model` | TODO |
-| Download training data | TODO |
+| Download training data | Done |
+| Download testing data  | Done | 
 
 ---
 

@@ -3,6 +3,7 @@ import pandas as pd
 from config import evaluation_cache, CLASSES
 from inference import analyze_image_all_models
 from utils import get_model_list, format_model_name, get_experiment_folders
+from gradio_gpu_monitor import GPUMonitor
 
 def update_leaderboard(experiment, show_filenames):
     return get_leaderboard_df(experiment, show_filenames)
@@ -246,6 +247,11 @@ def create_ui():
                     inputs=[upload_img, experiment_selector, show_filenames_toggle],
                     outputs=[multi_model_df]
                 )
+                
+            with gr.TabItem("🖥️ System Monitor"):
+                gr.Markdown("### 📊 Real-time Hardware Telemetry")
+                gr.Markdown("<p style='color: #94a3b8;'>Monitor VRAM, Compute Utilization, and GPU Temperatures directly from the cluster.</p>")
+                GPUMonitor()
                 
             demo.load(fn=get_leaderboard_df, inputs=[experiment_selector, show_filenames_toggle], outputs=[leaderboard_df_ui])
             

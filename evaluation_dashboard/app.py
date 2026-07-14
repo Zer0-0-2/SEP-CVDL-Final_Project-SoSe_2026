@@ -46,7 +46,6 @@ if __name__ == "__main__":
             
     if models_to_compute:
         print(f"Found {len(models_to_compute)} new or modified models requiring evaluation.")
-        print("Pre-computing evaluations using batched GPU inference. This will take a few minutes...")
         precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, chunk_size=3)
         
         print("Saving updated evaluation cache to disk...")

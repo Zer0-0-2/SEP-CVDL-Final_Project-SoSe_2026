@@ -221,7 +221,7 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
         gc.collect()
         torch.cuda.empty_cache()
 
-def analyze_image_all_models(image, experiment="All models"):
+def analyze_image_all_models(image, experiment="All models", show_filenames=False):
     val_transforms = get_val_transforms(image_size=224)
     
     img_tensor = val_transforms(image=image)["image"].unsqueeze(0)
@@ -240,7 +240,7 @@ def analyze_image_all_models(image, experiment="All models"):
             pred_class = CLASSES[pred_idx]
             
             results.append({
-                "Model": format_model_name(weights_name),
+                "Model": weights_name if show_filenames else format_model_name(weights_name),
                 "Prediction": pred_class,
                 "Confidence": f"{conf:.2%}"
             })

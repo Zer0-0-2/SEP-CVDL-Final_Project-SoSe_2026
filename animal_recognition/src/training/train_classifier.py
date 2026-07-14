@@ -645,12 +645,11 @@ if __name__ == "__main__":
 
     del model_10, optimizer_10, scheduler_10, trainer_10
     torch.cuda.empty_cache()
-
     # actual config from the fine grained cat classification paper
     model_11 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
     optimizer_11 = optim.AdamW(model_11.parameters(), lr=1e-4, weight_decay=1e-4)
     # Step-wise decay, e.g., decay by 0.5 every 30 epochs
-    scheduler_11 = StepLRScheduler(optimizer_11, decay_t=30, decay_rate=0.5)
+    scheduler_11 = StepLRScheduler(optimizer_11, decay_t=10, decay_rate=0.5)
 
     trainer_11 = ClassifierTrainer(
         model=model_11,
@@ -664,7 +663,6 @@ if __name__ == "__main__":
 
     del model_11, optimizer_11, scheduler_11, trainer_11
     torch.cuda.empty_cache()
-
     # bottom 50% layer freezing
     model_12 = GCViTClassifier(pretrained=True, model_name="gcvit_tiny")
     # Freeze stages 0 and 1
@@ -907,11 +905,11 @@ if __name__ == "__main__":
 
     del model_21, optimizer_21, scheduler_21, trainer_21
     torch.cuda.empty_cache()
-
+    """
     # like in gcvit paper, but for convnext 
     model_22 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
     optimizer_22 = optim.AdamW(model_22.parameters(), lr=1e-4, weight_decay=1e-4)
-    scheduler_22 = StepLRScheduler(optimizer_22, decay_t=30, decay_rate=0.5)
+    scheduler_22 = StepLRScheduler(optimizer_22, decay_t=10, decay_rate=0.5)
     trainer_22 = ClassifierTrainer(
         model=model_22,
         optimizer=optimizer_22,
@@ -924,7 +922,7 @@ if __name__ == "__main__":
 
     del model_22, optimizer_22, scheduler_22, trainer_22
     torch.cuda.empty_cache()
-
+    """
     # freze first layers 
     model_23 = ConvNextClassifier(pretrained=True, model_name="convnextv2_tiny")
     for name, param in model_23.named_parameters():

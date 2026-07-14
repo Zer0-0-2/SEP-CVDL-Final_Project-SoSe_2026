@@ -32,10 +32,17 @@ if __name__ == "__main__":
     print("Validating cache with SHA256 hashes...")
     for w in models:
         current_hash = model_hashes[w]
+        
         if w in disk_cache and disk_cache[w][0] == current_hash:
             evaluation_cache[w] = disk_cache[w][1]
         else:
-            models_to_compute.append(w)
+            basename = os.path.basename(w)
+            if basename in disk_cache and disk_cache[basename][0] == current_hash:
+                print(f"Migrating cache entry for {basename} -> {w}")
+                evaluation_cache[w] = disk_cache[basename][1]
+                disk_cache[w] = disk_cache.pop(basename)
+            else:
+                models_to_compute.append(w)
             
     if models_to_compute:
         print(f"Found {len(models_to_compute)} new or modified models requiring evaluation.")

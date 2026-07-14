@@ -64,7 +64,7 @@ def start_training(model_name, lr, scheduler_type, note, warmup_t):
 
 
 def main():
-    learning_rates = [1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5]
+    learning_rates = [1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5]
     models = ["gcvit_tiny"]
 
     for lr in learning_rates:

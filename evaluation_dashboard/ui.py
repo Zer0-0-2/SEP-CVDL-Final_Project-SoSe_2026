@@ -5,8 +5,8 @@ from inference import analyze_image_all_models
 from utils import get_model_list, format_model_name, get_experiment_folders, format_experiment_name
 from gradio_gpu_monitor import GPUMonitor
 
-def update_leaderboard(experiment, show_filenames):
-    return get_leaderboard_df(experiment, show_filenames)
+def update_leaderboard(experiment, show_filenames, sort_by):
+    print(f"DEBUG: experiment={experiment!r}"); return get_leaderboard_df(experiment, show_filenames, sort_by)
 
 def update_model_dropdown(experiment, show_filenames):
     if show_filenames:
@@ -44,9 +44,11 @@ def filter_errors(weights_name, true_class_filter):
     gallery_items = [(m["image_path"], f"Pred: {m['pred_label']} (Conf: {m['confidence']:.2f})") for m in misclassifications]
     return gallery_items
 
-def get_leaderboard_df(experiment="All models", show_filenames=False):
+def get_leaderboard_df(experiment="Initial_Experiments", show_filenames=False, sort_by="F1-Score"):
+    cols = ["Stage", "Model", "Accuracy", "F1-Score", "Precision", "Recall"]
     if not evaluation_cache:
-        return pd.DataFrame(columns=["Stage", "Model", "Accuracy", "F1-Score", "Precision", "Recall"])
+        df = pd.DataFrame(columns=cols)
+        return df.rename(columns={sort_by: f"{sort_by} ▼"})
         
     allowed_models = set(get_model_list(experiment))
         
@@ -68,23 +70,17 @@ def get_leaderboard_df(experiment="All models", show_filenames=False):
                 "Precision": res["macro_precision"],
                 "Recall": res["macro_recall"]
             })
-    df = pd.DataFrame(data)
-    
-    df = df.sort_values(by="F1-Score", ascending=False).reset_index(drop=True)
-    
-    df["Accuracy"] = df["Accuracy"].apply(lambda x: f"{x:.2%}")
-    df["F1-Score"] = df["F1-Score"].apply(lambda x: f"{x:.2%}")
-    df["Precision"] = df["Precision"].apply(lambda x: f"{x:.2%}")
-    df["Recall"] = df["Recall"].apply(lambda x: f"{x:.2%}")
+    df = pd.DataFrame(data, columns=cols)
     
     if len(df) > 0:
-        df.loc[0, 'Model'] = "🥇 " + df.loc[0, 'Model']
-    if len(df) > 1:
-        df.loc[1, 'Model'] = "🥈 " + df.loc[1, 'Model']
-    if len(df) > 2:
-        df.loc[2, 'Model'] = "🥉 " + df.loc[2, 'Model']
+        df = df.sort_values(by=sort_by, ascending=False).reset_index(drop=True)
         
-    return df
+        df["Accuracy"] = df["Accuracy"].apply(lambda x: f"{x:.2%}")
+        df["F1-Score"] = df["F1-Score"].apply(lambda x: f"{x:.2%}")
+        df["Precision"] = df["Precision"].apply(lambda x: f"{x:.2%}")
+        df["Recall"] = df["Recall"].apply(lambda x: f"{x:.2%}")
+            
+    return df.rename(columns={sort_by: f"{sort_by} ▼"})
 
 custom_css = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
@@ -139,9 +135,14 @@ h1 {
 }
 
 /* Force tables to expand without scrollbars */
-.table-wrap { max-height: none !important; overflow: visible !important; }
-.tbody { max-height: none !important; overflow: visible !important; }
-.table-container { max-height: none !important; overflow: visible !important; }
+.metric-box .table-wrap,
+.metric-box .tbody,
+.metric-box .table-container,
+.metric-box div[class*='overflow'],
+.metric-box div {
+    max-height: none !important;
+    overflow: visible !important;
+}
 """
 
 my_theme = gr.themes.Monochrome(
@@ -170,8 +171,9 @@ def create_ui():
         with gr.Row():
             experiment_folders = get_experiment_folders()
             experiment_choices = [("All Models", "All models")] + [(format_experiment_name(f), f) for f in experiment_folders]
-            experiment_selector = gr.Radio(choices=experiment_choices, value="All models", label="Select Experiment", interactive=True, scale=3)
-            show_filenames_toggle = gr.Checkbox(label="Show raw file names", value=False, interactive=True, scale=1)
+            experiment_selector = gr.Radio(choices=experiment_choices, value="Initial_Experiments", label="Select Stage", interactive=True, scale=4)
+            sort_selector = gr.Radio(choices=["Accuracy", "F1-Score", "Precision", "Recall"], value="F1-Score", label="Sort By", interactive=True, scale=3)
+            show_filenames_toggle = gr.Checkbox(label="Show raw file names", value=False, interactive=True, scale=2)
         
         with gr.Tabs():
             with gr.TabItem("🏆 Leaderboard"):
@@ -179,15 +181,16 @@ def create_ui():
                 gr.Markdown("<p style='color: #94a3b8;'>Ranking of all available models based on overall metrics computed across our entire test dataset (Stanford Dogs, Oxford Pets and Imagenet)</p>")
                 leaderboard_df_ui = gr.Dataframe(
                     interactive=False,
-                    headers=["Stage", "Model", "Accuracy", "F1-Score", "Precision", "Recall"],
+                    headers=["Stage", "Model", "Accuracy", "F1-Score ▼", "Precision", "Recall"],
                     datatype=["str", "str", "str", "str", "str", "str"],
-                    elem_classes="metric-box"
+                    elem_classes="metric-box",
+                    column_widths=["15%", "45%", "10%", "10%", "10%", "10%"]
                 )
                 
             with gr.TabItem("📊 Dataset Evaluation"):
                 with gr.Row():
                     model_dropdown = gr.Dropdown(
-                        choices=[(format_model_name(w), w) for w in get_model_list()], 
+                        choices=[(format_model_name(w), w) for w in get_model_list("Initial_Experiments")], 
                         label="Select Pretrained Weights", 
                         interactive=True, 
                         scale=3
@@ -261,11 +264,11 @@ def create_ui():
                 gr.Markdown("<p style='color: #94a3b8;'>Monitor VRAM, Compute Utilization, and GPU Temperatures directly from the cluster.</p>")
                 GPUMonitor()
                 
-            demo.load(fn=get_leaderboard_df, inputs=[experiment_selector, show_filenames_toggle], outputs=[leaderboard_df_ui])
+            demo.load(fn=get_leaderboard_df, inputs=[experiment_selector, show_filenames_toggle, sort_selector], outputs=[leaderboard_df_ui])
             
             experiment_selector.change(
                 fn=update_leaderboard,
-                inputs=[experiment_selector, show_filenames_toggle],
+                inputs=[experiment_selector, show_filenames_toggle, sort_selector],
                 outputs=[leaderboard_df_ui]
             )
             experiment_selector.change(
@@ -276,13 +279,19 @@ def create_ui():
             
             show_filenames_toggle.change(
                 fn=update_leaderboard,
-                inputs=[experiment_selector, show_filenames_toggle],
+                inputs=[experiment_selector, show_filenames_toggle, sort_selector],
                 outputs=[leaderboard_df_ui]
             )
             show_filenames_toggle.change(
                 fn=update_model_dropdown,
                 inputs=[experiment_selector, show_filenames_toggle],
                 outputs=[model_dropdown]
+            )
+            
+            sort_selector.change(
+                fn=update_leaderboard,
+                inputs=[experiment_selector, show_filenames_toggle, sort_selector],
+                outputs=[leaderboard_df_ui]
             )
             
     return demo

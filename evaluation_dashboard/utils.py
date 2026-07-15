@@ -59,12 +59,19 @@ def format_model_name(filename):
     elif "gcvit_base" in name: arch = "GCViT Base"
     
     method = ""
-    if "bitfit" in name: method = "BitFit"
+    if "bitfit" in name:
+        if "smaller_warmup" in name:
+            method = "BitFit (Smaller Warmup)"
+        else:
+            method = "BitFit"
     elif "conservative_finetune" in name: method = "Conservative Finetune"
     elif "aggressive_finetune" in name: method = "Aggressive Finetune"
     elif "layer_decay" in name: method = "Layer Decay"
     elif "linear_probe" in name: method = "Linear Probe"
     elif "partial_freeze" in name: method = "Partial Freeze"
+    elif "bottom_freeze" in name: method = "Bottom Freeze"
+    elif "standard_finetune" in name: method = "Standard Finetune"
+    elif "long_warmup" in name: method = "Long Warmup"
     elif "custom_wd" in name: method = "Custom WD"
     elif "paper_rep" in name: method = "Paper Reproduction"
     elif "baseline" in name: method = "Baseline"
@@ -72,10 +79,17 @@ def format_model_name(filename):
     elif "cosinelr_with_warmup" in name: method = "Cosine Warmup"
     
     lr = ""
+    wd = ""
+    ls = ""
+    sz = ""
+    aug = ""
+    
     for p in parts:
-        if p.startswith("lr"):
-            lr = p[2:]
-            break
+        if p.startswith("lr"): lr = p[2:]
+        elif p.startswith("wd"): wd = p[2:]
+        elif p.startswith("ls"): ls = p[2:]
+        elif p.startswith("sz"): sz = p[2:]
+        elif p.startswith("aug"): aug = p[3:].capitalize()
             
     sched = ""
     if "Cosine" in name: sched = "CosineLR"
@@ -88,7 +102,11 @@ def format_model_name(filename):
     parts_to_join = []
     if method: parts_to_join.append(method)
     if pretrained: parts_to_join.append(pretrained)
+    if aug: parts_to_join.append(f"Aug: {aug}")
+    if sz: parts_to_join.append(f"SZ: {sz}")
     if lr: parts_to_join.append(f"LR: {lr}")
+    if wd: parts_to_join.append(f"WD: {wd}")
+    if ls: parts_to_join.append(f"LS: {ls}")
     if sched: parts_to_join.append(sched)
     
     details = " | ".join(parts_to_join)

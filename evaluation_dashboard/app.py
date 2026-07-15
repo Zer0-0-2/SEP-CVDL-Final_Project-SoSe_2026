@@ -2,7 +2,7 @@ import os
 import pickle
 from pathlib import Path
 
-from config import CACHE_FILE, WEIGHTS_DIR, evaluation_cache
+from config import CACHE_FILE, WEIGHTS_DIR, evaluation_cache, logger
 from utils import get_model_list, compute_sha256
 from inference import precompute_all_models_batched
 from ui import create_ui, custom_css, my_theme
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     CACHE_DIR = Path("/app/cache_data")
     CACHE_DIR.mkdir(exist_ok=True)
     
-    print("Computing SHA256 hashes for all available models...")
+    logger.info("Computing SHA256 hashes for all available models...")
     models = get_model_list()
     model_hashes = {}
     for w in models:
@@ -22,14 +22,14 @@ if __name__ == "__main__":
         try:
             with open(CACHE_FILE, "rb") as f:
                 disk_cache = pickle.load(f)
-            print("Successfully read disk cache structure.")
+            logger.info("Successfully read disk cache structure.")
         except Exception as e:
-            print(f"Failed to read disk cache {e}")
+            logger.error(f"Failed to read disk cache: {e}")
             disk_cache = {}
             
     models_to_compute = []
     
-    print("Validating cache with SHA256 hashes...")
+    logger.info("Validating cache with SHA256 hashes...")
     for w in models:
         current_hash = model_hashes[w]
         
@@ -38,23 +38,23 @@ if __name__ == "__main__":
         else:
             basename = os.path.basename(w)
             if basename in disk_cache and disk_cache[basename][0] == current_hash:
-                print(f"Migrating cache entry for {basename} -> {w}")
+                logger.info(f"Migrating cache entry for {basename} -> {w}")
                 evaluation_cache[w] = disk_cache[basename][1]
                 disk_cache[w] = disk_cache.pop(basename)
             else:
                 models_to_compute.append(w)
             
     if models_to_compute:
-        print(f"Found {len(models_to_compute)} new or modified models requiring evaluation.")
+        logger.info(f"Found {len(models_to_compute)} new or modified models requiring evaluation.")
         precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, chunk_size=3)
         
-        print("Saving updated evaluation cache to disk...")
+        logger.info("Saving updated evaluation cache to disk...")
         with open(CACHE_FILE, "wb") as f:
             pickle.dump(disk_cache, f)
-        print("Cache saved successfully!")
+        logger.info("Cache saved successfully!")
     else:
-        print("All models are cached and verified. Skipping pre-computation.")
+        logger.info("All models are cached and verified. Skipping pre-computation.")
         
-    print("Launching dashboard...")
+    logger.info("Launching dashboard UI server...")
     demo = create_ui()
     demo.launch(server_name="0.0.0.0", server_port=7860, css=custom_css, theme=my_theme)

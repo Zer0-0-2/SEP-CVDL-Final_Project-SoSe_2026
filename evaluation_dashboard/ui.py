@@ -3,12 +3,15 @@ import pandas as pd
 from config import evaluation_cache, CLASSES
 from inference import analyze_image_all_models
 from utils import get_model_list, format_model_name, get_experiment_folders, format_experiment_name
+from config import logger
 from gradio_gpu_monitor import GPUMonitor
 
 def update_leaderboard(experiment, show_filenames, sort_by):
-    print(f"DEBUG: experiment={experiment!r}"); return get_leaderboard_df(experiment, show_filenames, sort_by)
+    logger.info(f"UI Event -> Updating leaderboard for stage: {experiment}")
+    return get_leaderboard_df(experiment, show_filenames, sort_by)
 
 def update_model_dropdown(experiment, show_filenames):
+    logger.info(f"UI Event -> Updating model dropdown choices for stage: {experiment}")
     if show_filenames:
         choices = [(w, w) for w in get_model_list(experiment)]
     else:

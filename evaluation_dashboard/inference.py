@@ -10,7 +10,11 @@ from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
 from animal_recognition.src.models.classifier_gcvit import GCViTClassifier
 from animal_recognition.src.data.dataset import AnimalDataset
 from animal_recognition.src.data.augmentations import get_val_transforms
+from animal_recognition.src.models.yoloworld import YoloWorldDetector
+from pathlib import Path
+import cv2
 
+_YOLO_INSTANCE = None
 def load_model(weights_name):
     weights_path = WEIGHTS_DIR / weights_name
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -99,7 +103,7 @@ def evaluate_model(weights_name):
     all_confidences = np.array(all_confidences)
     
     acc = accuracy_score(all_labels, all_preds)
-    precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average=None, zero_division=0)
+    precision, recall, f1, support = precision_recall_fscore_support(all_labels, all_preds, average=None, zero_division=0)
     macro_prec, macro_rec, macro_f1, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro', zero_division=0)
     
     class_metrics = []
@@ -108,7 +112,8 @@ def evaluate_model(weights_name):
             "Breed": cls_name,
             "Precision": round(float(precision[i]), 4),
             "Recall": round(float(recall[i]), 4),
-            "F1-Score": round(float(f1[i]), 4)
+            "F1-Score": round(float(f1[i]), 4),
+            "Support": int(support[i])
         })
         
     df_metrics = pd.DataFrame(class_metrics)
@@ -165,8 +170,8 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
         logger.info(f"Evaluating chunk on dataset ({len(loader)} batches)") 
         with torch.no_grad():
             for batch_idx, (images, labels) in enumerate(loader):
-                if batch_idx > 0 and batch_idx % 20 == 0:
-                    logger.debug(f"  Processed batch {batch_idx}/{len(loader)}")
+                if batch_idx > 0 and batch_idx % 16 == 0:
+                    logger.info(f"  Processed batch {batch_idx}/{len(loader)} ({(batch_idx/len(loader)):.1%} complete)")
                 all_labels.extend(labels.numpy())
                 images = images.to(device)
                 
@@ -175,9 +180,10 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
                     all_preds[w].extend(cls.cpu().numpy())
                     all_confidences[w].extend(conf.cpu().numpy())
                     
-        logger.info("Computing metrics...")
+        logger.info("Computing metrics for evaluated models...")
         all_labels_np = np.array(all_labels)
         for w in chunk:
+            logger.info(f"  Computing metrics for: {w}")
             preds = np.array(all_preds[w])
             confs = np.array(all_confidences[w])
             
@@ -225,10 +231,27 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
         torch.cuda.empty_cache()
 
 def analyze_image_all_models(image, experiment="All models", show_filenames=False):
+    global _YOLO_INSTANCE
     logger.info(f"Custom Upload -> Running analysis across models in stage: {experiment}")
-    val_transforms = get_val_transforms(image_size=224)
     
-    img_tensor = val_transforms(image=image)["image"].unsqueeze(0)
+    if _YOLO_INSTANCE is None:
+        _YOLO_INSTANCE = YoloWorldDetector()
+        
+    cropped_np, conf, cls_id = _YOLO_INSTANCE.predict(
+        Path(image),
+        confidence_threshold=0.05,
+        reject_on_invalid_class=False,
+        classes=list(range(_YOLO_INSTANCE.reject_classes_index)),
+    )
+    
+    if cropped_np is not None:
+        cropped_rgb = cropped_np[:, :, ::-1].copy()
+    else:
+        img = cv2.imread(image)
+        cropped_rgb = img[:, :, ::-1].copy()
+        
+    val_transforms = get_val_transforms(image_size=224)
+    img_tensor = val_transforms(image=cropped_rgb)["image"].unsqueeze(0)
     models = get_model_list(experiment)
     
     results = []
@@ -257,4 +280,11 @@ def analyze_image_all_models(image, experiment="All models", show_filenames=Fals
     df = pd.DataFrame(results)
     if not df.empty:
         df = df.sort_values(by="Confidence", ascending=False)
-    return df
+        majority_class = df["Prediction"].mode()[0]
+        vote_count = (df["Prediction"] == majority_class).sum()
+        total_votes = len(df)
+        majority_str = f"### 🗳️ Majority Vote: **{majority_class}** ({vote_count}/{total_votes} models)"
+    else:
+        majority_str = "### 🗳️ Majority Vote: Waiting for inference..."
+        
+    return df, majority_str, cropped_rgb

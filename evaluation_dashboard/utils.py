@@ -22,9 +22,9 @@ def format_experiment_name(folder_name):
     mappings = {
         "BitFit_Tiny": "BitFit (Tiny)",
         "BitFit_Base": "BitFit (Base)",
-        "Initial_Experiments": "Initial (All Models)",
-        "Initial_Experiments_Top_5_Failed": "Initial (Top 5 Failed)",
-        "Initial_Experiments_Top_5": "Initial (Top 5)"
+        "Initial_Experiments": "Initial",
+        "Initial_Experiments_Top_5_Failed": "Top 5 (Base, Failed)",
+        "Initial_Experiments_Top_5": "Top 5 (Base)"
     }
     
     if folder_name in mappings:
@@ -68,14 +68,14 @@ def format_model_name(filename):
     elif "aggressive_finetune" in name: method = "Aggressive Finetune"
     elif "layer_decay" in name: method = "Layer Decay"
     elif "linear_probe" in name: method = "Linear Probe"
-    elif "partial_freeze" in name: method = "Partial Freeze"
-    elif "bottom_freeze" in name: method = "Bottom Freeze"
+    elif "partial_freeze" in name: method = "Partial Layer Freeze"
+    elif "bottom_freeze" in name: method = "Bottom Layer Freeze"
     elif "standard_finetune" in name: method = "Standard Finetune"
     elif "long_warmup" in name: method = "Long Warmup"
     elif "custom_wd" in name: method = "Custom WD"
-    elif "paper_rep" in name: method = "Paper Reproduction"
+    elif "paper_rep" in name: method = "Cat Breed Paper (Reproduction)"
     elif "baseline" in name: method = "Baseline"
-    elif "cosinelr_with_warmup_optimized_weight_decay" in name: method = "Optimized WD"
+    elif "cosinelr_with_warmup_optimized_weight_decay" in name: method = "Optimized WD GRN"
     elif "cosinelr_with_warmup" in name: method = "Cosine Warmup"
     
     lr = ""

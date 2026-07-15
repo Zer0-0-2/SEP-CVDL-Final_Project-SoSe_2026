@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 import gc
-from config import WEIGHTS_DIR, DATASET_DIR, CLASSES, evaluation_cache
+from config import WEIGHTS_DIR, DATASET_DIR, CLASSES, evaluation_cache, logger
 from utils import format_model_name, get_model_list
 
 from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
@@ -151,7 +151,7 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
     
     for i in range(0, len(models_to_compute), chunk_size):
         chunk = models_to_compute[i:i+chunk_size]
-        print(f"[{i+1} to {min(i+chunk_size, len(models_to_compute))}/{len(models_to_compute)}] Loading chunk of {len(chunk)} models into VRAM...")
+        logger.info(f"[{i+1} to {min(i+chunk_size, len(models_to_compute))}/{len(models_to_compute)}] Loading chunk of {len(chunk)} models into VRAM...")
         
         loaded_models = {}
         for w in chunk:
@@ -162,11 +162,11 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
         all_confidences = {w: [] for w in chunk}
         all_labels = []
         
-        print(f"Evaluating chunk on dataset") 
+        logger.info(f"Evaluating chunk on dataset ({len(loader)} batches)") 
         with torch.no_grad():
             for batch_idx, (images, labels) in enumerate(loader):
                 if batch_idx > 0 and batch_idx % 20 == 0:
-                    print(f"  Processed batch {batch_idx}/{len(loader)}")
+                    logger.debug(f"  Processed batch {batch_idx}/{len(loader)}")
                 all_labels.extend(labels.numpy())
                 images = images.to(device)
                 
@@ -175,7 +175,7 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
                     all_preds[w].extend(cls.cpu().numpy())
                     all_confidences[w].extend(conf.cpu().numpy())
                     
-        print(f"Computing metrics...")
+        logger.info("Computing metrics...")
         all_labels_np = np.array(all_labels)
         for w in chunk:
             preds = np.array(all_preds[w])
@@ -222,6 +222,7 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
         torch.cuda.empty_cache()
 
 def analyze_image_all_models(image, experiment="All models", show_filenames=False):
+    logger.info(f"Custom Upload -> Running analysis across models in stage: {experiment}")
     val_transforms = get_val_transforms(image_size=224)
     
     img_tensor = val_transforms(image=image)["image"].unsqueeze(0)
@@ -230,6 +231,7 @@ def analyze_image_all_models(image, experiment="All models", show_filenames=Fals
     results = []
     
     for weights_name in models:
+        logger.debug(f"Predicting with model: {weights_name}")
         model, device = load_model(weights_name)
         img_tensor = img_tensor.to(device)
         

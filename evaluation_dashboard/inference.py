@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, confusion_matrix
 import gc
 from config import WEIGHTS_DIR, DATASET_DIR, CLASSES, evaluation_cache, logger
 from utils import format_model_name, get_model_list
@@ -206,13 +206,16 @@ def precompute_all_models_batched(models_to_compute, disk_cache, model_hashes, c
                         "confidence": float(confs[idx])
                     })
                     
+            cm = confusion_matrix(all_labels_np, preds, labels=range(len(CLASSES)))
+                    
             result = {
                 "accuracy": float(acc),
                 "macro_f1": float(macro_f1),
                 "macro_precision": float(macro_prec),
                 "macro_recall": float(macro_rec),
                 "df_metrics": df_metrics,
-                "misclassifications": misclassifications
+                "misclassifications": misclassifications,
+                "confusion_matrix": cm.tolist()
             }
             evaluation_cache[w] = result
             disk_cache[w] = (model_hashes[w], result)

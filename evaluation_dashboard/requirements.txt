@@ -6,3 +6,5 @@ Pillow
 numpy<2
 albumentations
 gradio-gpu-monitor
+seaborn
+matplotlib

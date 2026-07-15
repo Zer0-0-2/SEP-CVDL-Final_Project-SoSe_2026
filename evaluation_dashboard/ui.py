@@ -5,6 +5,33 @@ from inference import analyze_image_all_models
 from utils import get_model_list, format_model_name, get_experiment_folders, format_experiment_name
 from config import logger
 from gradio_gpu_monitor import GPUMonitor
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def generate_confusion_matrix_plot(cm_data):
+    if not cm_data:
+        return None
+        
+    fig, ax = plt.subplots(figsize=(10, 8), facecolor='#0f172a')
+    sns.heatmap(cm_data, annot=True, fmt='d', cmap='mako', 
+                xticklabels=CLASSES, yticklabels=CLASSES, ax=ax,
+                cbar_kws={'label': 'Count'})
+    
+    ax.set_facecolor('#0f172a')
+    ax.tick_params(colors='#f8fafc', labelsize=10)
+    ax.set_xlabel('Predicted Label', color='#f8fafc', fontsize=12)
+    ax.set_ylabel('True Label', color='#f8fafc', fontsize=12)
+    ax.set_title('Confusion Matrix', color='#f8fafc', fontsize=14)
+    
+    cbar = ax.collections[0].colorbar
+    if cbar:
+        cbar.ax.yaxis.set_tick_params(colors='#f8fafc')
+        cbar.ax.yaxis.label.set_color('#f8fafc')
+    
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    return fig
 
 def update_leaderboard(experiment, show_filenames, sort_by):
     logger.info(f"UI Event -> Updating leaderboard for stage: {experiment}")
@@ -19,7 +46,7 @@ def update_model_dropdown(experiment, show_filenames):
     return gr.update(choices=choices, value=None)
 def update_dashboard(weights_name):
     if not weights_name or weights_name not in evaluation_cache:
-        return "N/A", "N/A", "N/A", "N/A", pd.DataFrame(), gr.update(choices=["All"], value="All"), []
+        return "N/A", "N/A", "N/A", "N/A", None, pd.DataFrame(), gr.update(choices=["All"], value="All"), []
         
     res = evaluation_cache[weights_name]
     
@@ -30,10 +57,13 @@ def update_dashboard(weights_name):
     
     df_metrics = res["df_metrics"]
     misclassifications = res["misclassifications"]
+    cm_data = res.get("confusion_matrix", None)
+    
+    cm_plot = generate_confusion_matrix_plot(cm_data)
     
     gallery_items = [(m["image_path"], f"Pred: {m['pred_label']} (Conf: {m['confidence']:.2f})") for m in misclassifications]
     
-    return acc_str, f1_str, prec_str, rec_str, df_metrics, gr.update(choices=["All"] + CLASSES, value="All"), gallery_items
+    return acc_str, f1_str, prec_str, rec_str, cm_plot, df_metrics, gr.update(choices=["All"] + CLASSES, value="All"), gallery_items
 
 def filter_errors(weights_name, true_class_filter):
     if not weights_name or weights_name not in evaluation_cache:
@@ -215,6 +245,9 @@ def create_ui():
                     datatype=["str", "number", "number", "number"],
                 )
                 
+                gr.Markdown("### 🔍 Confusion Matrix")
+                conf_matrix_plot = gr.Plot()
+                
                 gr.Markdown("### 🔍 Visual Error Explorer")
                 gr.Markdown("<p style='color: #94a3b8;'>Explore misclassified images. Select a True Class below to filter.</p>")
                 with gr.Row():
@@ -232,7 +265,7 @@ def create_ui():
                 eval_btn.click(
                     fn=update_dashboard,
                     inputs=[model_dropdown],
-                    outputs=[acc_box, f1_box, prec_box, rec_box, df_box, error_filter, error_gallery]
+                    outputs=[acc_box, f1_box, prec_box, rec_box, conf_matrix_plot, df_box, error_filter, error_gallery]
                 )
                 
                 error_filter.change(

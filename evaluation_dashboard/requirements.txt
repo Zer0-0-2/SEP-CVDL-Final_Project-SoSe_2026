@@ -8,3 +8,5 @@ albumentations
 gradio-gpu-monitor
 seaborn
 matplotlib
+ultralytics
+git+https://github.com/ultralytics/CLIP.git

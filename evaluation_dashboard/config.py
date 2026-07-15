@@ -16,8 +16,12 @@ WEIGHTS_DIR = BASE_DIR / "models" / "weights"
 
 CACHE_DIR = Path("/app/cache_data")
 CACHE_FILE = CACHE_DIR / "eval_cache.pkl"
+CACHE_FILE_PROVIDED = CACHE_DIR / "eval_cache_provided.pkl"
+PROVIDED_DATASET_DIR = Path("/app/images")
 
 from animal_recognition.src.data.dataset import CLASSES
+PROVIDED_CLASSES = ["reject(-1)"] + CLASSES
 
 # Shared Memory Cache
 evaluation_cache = {}
+evaluation_cache_provided = {}

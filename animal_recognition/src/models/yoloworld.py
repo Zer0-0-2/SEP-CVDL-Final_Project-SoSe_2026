@@ -55,7 +55,7 @@ class YoloWorldDetector:
         | None = CUTOFF,  # here you supply the index of the first reject class in model_classes. Everything >= will be considered reject class
     ):
         self.model = YOLOWorld(model=animal_recog_dir / "models" / model_name, verbose=False)
-        settings.update({"weights_dir": str(animal_recog_dir / "models" / "weights")})
+        settings.update({"weights_dir": str(animal_recog_dir / "models")})
         self.model.set_classes(model_classes)
         self.reject_classes_index = reject_classes_index
         if reject_classes_index is not None:
@@ -180,7 +180,7 @@ def process_dataset(
     model = YOLOWorld(model=animal_recog_dir / "models" / model_name, verbose=False)
 
     # prevent from downloading ViT file into weights/clip
-    settings.update({"weights_dir": str(animal_recog_dir / "models" / "weights")})
+    settings.update({"weights_dir": str(animal_recog_dir / "models" / "clip")})
 
     model.set_classes(model_classes)
 

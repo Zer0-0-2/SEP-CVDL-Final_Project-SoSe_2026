@@ -22,9 +22,9 @@ def format_experiment_name(folder_name):
     mappings = {
         "BitFit_Tiny": "BitFit (Tiny)",
         "BitFit_Base": "BitFit (Base)",
-        "Initial_Experiments": "Initial Experiments",
-        "Initial_Experiments_Top_5_Failed": "Initial Experiments (Top 5, Failed)",
-        "Initial_Experiments_Top_5": "Initial Experiments (Top 5)"
+        "Initial_Experiments": "Initial (All Models)",
+        "Initial_Experiments_Top_5_Failed": "Initial (Top 5 Failed)",
+        "Initial_Experiments_Top_5": "Initial (Top 5)"
     }
     
     if folder_name in mappings:

@@ -3,60 +3,76 @@
 #  Change values here to swap models or tune hyperparameters.
 #  No code changes needed to switch between classifiers.
 #
-#  IMPLEMENTED OPTIONS (as of current main):
-#    detector:   yolov8m  (src/models/detector.py)
-#                yoloworld  (src/models/yoloworld.py)
-#    classifier: baseline_cnn  (src/models/baseline_cnn.py)
-#                transfer      (src/models/transfer_model.py — timm backbone)
-#                convnext      (src/models/classifier_convnext.py — torchvision)
-#                gcvit         (src/models/classifier_gcvit.py — experimental)
-#    ood_gate:   softmax_threshold  (src/ood/gate.py — IMPLEMENTED)
-#                energy             (src/ood/gate.py — IMPLEMENTED)
-#                temperature_scaling (src/ood/gate.py — IMPLEMENTED, same as energy with T scaling)
-#    xai:        gradcam_xai   (src/xai/gradcam_xai.py — IMPLEMENTED)
-#                occlusion_xai (src/xai/occlusion_xai.py — IMPLEMENTED)
+#  The values below are the ones reported in the final report and are what
+#  inference.py runs with out of the box:
+#    detector    yolov8x-worldv2 @ 0.05, restricted to the 7 accept prompts
+#    classifier  GCViT-tiny, BitFit (bias + norm tuning), peak LR 1e-3
+#    ood gate    implemented but disabled (the detector does the rejecting)
+#
+#  IMPLEMENTED OPTIONS:
+#    detector:   yoloworld     (src/models/yoloworld.py — open vocabulary, deployed)
+#                yolov8m       (src/models/detector.py — closed vocabulary, superseded)
+#    classifier: gcvit         (src/models/classifier_gcvit.py)
+#                convnext      (src/models/classifier_convnext.py)
+#    ood_gate:   softmax_threshold | energy | temperature_scaling  (src/ood/gate.py)
+#    xai:        gradcam_xai | occlusion_xai  (src/xai/)
 # =============================================================
 
 # -------------------------------------------------------------
 # Pipeline routing
 # -------------------------------------------------------------
 pipeline:
-  # IMPLEMENTED: 'yolov8m.pt' (default), 'yolov8x-worldv2.pt' (yoloworld — needs yoloworld.py)
-  detector: yolov8m.pt
+  # 'yoloworld' (deployed) | 'yolov8m' (closed-vocabulary, kept for reference)
+  detector: yoloworld
 
-  # IMPLEMENTED: 'baseline_cnn' | 'transfer'
-  # NOT YET WIRED INTO inference.py: 'convnext' | 'gcvit' (use their own training scripts)
-  classifier: baseline_cnn
+  # 'gcvit' | 'convnext' — must match the architecture the weights were trained with
+  classifier: gcvit
 
-  # IMPLEMENTED: 'softmax_threshold' | 'energy' | 'temperature_scaling'
-  ood_gate: softmax_threshold
+  # Which gate to use *when* ood.enabled is true. See the ood block below.
+  ood_gate: energy
+
+# -------------------------------------------------------------
+# Detector settings (src/models/yoloworld.py)
+# -------------------------------------------------------------
+detector:
+  model: yolov8x-worldv2.pt     # s/m/l/x available; x has the best precision
+
+  # 0.05 sits at the knee of the recall/precision curve: recall 98.1%,
+  # precision 96.2% on the provided validation set.
+  confidence_threshold: 0.05
+
+  # Restrict the open vocabulary to its *accept* half at inference time.
+  # The reject prompts are not used for inference
+  restrict_to_accept_prompts: true
+  reject_on_invalid_class: true
 
 # -------------------------------------------------------------
 # Classifier settings
 # -------------------------------------------------------------
 classifier:
-  num_classes: 20               # 20 breeds — reject is handled by OODGate, not an output node
+  num_classes: 20               # 20 breeds — reject is not an output node
 
-  baseline_cnn:
-    weights: null               # path to .pt checkpoint; null = random init (for training)
+  # timm backbone name; must match the checkpoint below.
+  backbone: gcvit_tiny
 
-  transfer:
-    # IMPLEMENTED timm backbones (all accept 224x224 input):
-    #   'efficientnet_b3'  — 12M params, good accuracy/speed tradeoff (default)
-    #   'convnext_tiny'    — 28M params, strong on fine-grained tasks
-    #   'resnet50'         — 25M params, fast, good baseline
-    #   'vit_small_patch16_224' — 22M params, ViT (get_last_conv_layer() will fail — Grad-CAM unsupported)
-    backbone: efficientnet_b3
-    pretrained: true            # use ImageNet pretrained weights for the backbone
-    weights: null               # path to .pt checkpoint; null = pretrained backbone + fresh head
+  # Path to the .pt checkpoint, relative to this file (absolute also works).
+  # Best tiny run (By accuracy and F1): BitFit (biases + norms + head, 0.85% of parameters)
+  weights: animal_recognition/models/weights/Initial_Experiments/gcvit_tiny_gcvit_tiny_bitfit_preTrue_bs32_lr0.0001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt
+
+  image_size: 224               # crop is padded/resized to this before the classifier
 
 # -------------------------------------------------------------
 # OOD gate
 # -------------------------------------------------------------
 ood:
+  # Disabled: the detector already rejects 36 of 40 confounders on the
+  # provided set, and the gate thresholds were tuned on only 143 images.
+  # Set to true to put the gate back in front of the classifier's argmax.
+  enabled: false
+
   # softmax_threshold: reject if max(softmax(logits)) < threshold  (higher = more rejections)
   # energy:            reject if energy score > threshold           (lower = more rejections)
-  threshold: 0.5
+  threshold: -3.9
   temperature: 1.0      # T for energy/temperature_scaling: divides logits before softmax
 
 # -------------------------------------------------------------

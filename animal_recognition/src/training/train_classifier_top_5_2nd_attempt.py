@@ -57,9 +57,10 @@ def main():
     # 2. GCViT Base - Conservative Full Finetuning
     model_2 = GCViTClassifier(pretrained=True, model_name="gcvit_base")
 
-    optimizer_2 = optim.AdamW(model_2.parameters(), lr=2.77e-06, weight_decay=5e-2)
+    # Base LR: 1e-5 -> 5.55e-6
+    optimizer_2 = optim.AdamW(model_2.parameters(), lr=5.55e-06, weight_decay=5e-2)
     scheduler_2 = cosine_lr.CosineLRScheduler(
-        optimizer_2, t_initial=140, lr_min=2.77e-08, warmup_t=10, warmup_lr_init=2.77e-07
+        optimizer_2, t_initial=140, lr_min=5.55e-08, warmup_t=10, warmup_lr_init=5.55e-07
     )
 
     trainer_2 = ClassifierTrainer(
@@ -128,7 +129,7 @@ def main():
 
     optimizer_5 = optim.AdamW(model_5.parameters(), lr=5.55e-06, weight_decay=1e-2)
     scheduler_5 = cosine_lr.CosineLRScheduler(
-        optimizer_5, t_initial=140, lr_min=5.55e-08, warmup_t=10, warmup_lr_init=7.5e-7
+        optimizer_5, t_initial=140, lr_min=5.55e-08, warmup_t=10, warmup_lr_init=5.55e-07
     )
     trainer_5 = ClassifierTrainer(
         model=model_5,

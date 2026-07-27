@@ -28,17 +28,18 @@ def main():
     # Suggested during Q&A by Johannes: https://blog.eleuther.ai/mutransfer/
 
     # 1. GCViT Base - BitFit (Biases & Norms Only)
-    # muP LR Scaling: NOT APPLIED (Weight matrices are frozen)
+    # muP LR Scaling: 0.5 (Base LR: 1e-3 -> 5e-4)
     model_1 = GCViTClassifier(pretrained=True, model_name="gcvit_base")
     for name, param in model_1.named_parameters():
         if "bias" not in name and "head" not in name and "norm" not in name:
             param.requires_grad = False
 
     optimizer_1 = optim.AdamW(
-        filter(lambda p: p.requires_grad, model_1.parameters()), lr=1e-3, weight_decay=0
+        filter(lambda p: p.requires_grad, model_1.parameters()), lr=5e-4, weight_decay=0
     )
+    # Apply muP scaling (0.5) to lr_min and warmup_lr_init
     scheduler_1 = cosine_lr.CosineLRScheduler(
-        optimizer_1, t_initial=140, lr_min=1e-5, warmup_t=10, warmup_lr_init=1e-4
+        optimizer_1, t_initial=140, lr_min=5e-6, warmup_t=10, warmup_lr_init=5e-5
     )
 
     trainer_1 = ClassifierTrainer(

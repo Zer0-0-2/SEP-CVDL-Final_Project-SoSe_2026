@@ -15,6 +15,7 @@
 #                temperature_scaling (src/ood/gate.py — IMPLEMENTED, same as energy with T scaling)
 #    xai:        gradcam_xai   (src/xai/gradcam_xai.py — IMPLEMENTED)
 #                occlusion_xai (src/xai/occlusion_xai.py — IMPLEMENTED)
+#                layer_activation_xai (src/xai/layer_activation.py — IMPLEMENTED)
 # =============================================================
 
 # -------------------------------------------------------------

@@ -15,3 +15,8 @@ captum
 logging
 timm
 captum
+datasets
+rich
+gallery-dl
+matplotlib
+Pillow

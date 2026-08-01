@@ -11,7 +11,7 @@ import sys
 sys.path.append("/app")
 
 from animal_recognition.src.models.yoloworld import YoloWorldDetector
-from animal_recognition.src.data.augmentations import get_val_transforms
+from animal_recognition.src.data.augmentations_stronger import get_val_transforms
 from inference import load_model
 
 def precompute_provided_all_models(models_to_compute, disk_cache, model_hashes):

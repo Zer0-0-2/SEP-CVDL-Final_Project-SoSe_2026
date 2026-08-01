@@ -3,7 +3,7 @@ import pandas as pd
 from config import evaluation_cache, CLASSES
 from inference import analyze_image_all_models
 from utils import get_model_list, format_model_name, get_experiment_folders, format_experiment_name
-from config import logger, CLASSES, PROVIDED_CLASSES, evaluation_cache, evaluation_cache_provided
+from config import logger, CLASSES, PROVIDED_CLASSES, evaluation_cache, evaluation_cache_provided, DATASET_DIR
 from gradio_gpu_monitor import GPUMonitor
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -37,7 +37,8 @@ def generate_confusion_matrix_plot(cm_data, is_provided=False):
 
 def update_leaderboard(experiment, show_filenames, sort_by, use_provided=False):
     logger.info(f"UI Event -> Updating leaderboard for stage: {experiment}")
-    return get_leaderboard_df(experiment, show_filenames, sort_by, use_provided)
+    df = get_leaderboard_df(experiment, show_filenames, sort_by, use_provided)
+    return gr.update(value=df)
 
 def update_model_dropdown(experiment, show_filenames):
     logger.info(f"UI Event -> Updating model dropdown choices for stage: {experiment}")
@@ -61,7 +62,15 @@ def update_dashboard(weights_name, use_provided=False):
     
     df_metrics = res["df_metrics"]
     if "Support" not in df_metrics.columns:
-        df_metrics["Support"] = "N/A"
+        def _get_support(breed):
+            if breed in ["macro avg", "weighted avg"]:
+                return ""
+            breed_path = DATASET_DIR / breed
+            if breed_path.exists() and breed_path.is_dir():
+                return len([f for f in breed_path.iterdir() if f.is_file()])
+            return 0
+            
+        df_metrics["Support"] = df_metrics["Breed"].apply(_get_support)
         
     misclassifications = res["misclassifications"]
     cm_data = res.get("confusion_matrix", None)
@@ -72,7 +81,7 @@ def update_dashboard(weights_name, use_provided=False):
     
     filter_classes = ["All"] + (PROVIDED_CLASSES if use_provided else CLASSES)
     
-    return acc_str, prec_str, rec_str, f1_str, cm_plot, df_metrics, gr.update(choices=filter_classes, value="All"), gallery_items
+    return acc_str, prec_str, rec_str, f1_str, cm_plot, gr.update(value=df_metrics), gr.update(choices=filter_classes, value="All"), gallery_items
 
 def filter_errors(weights_name, true_class_filter, use_provided=False):
     cache = evaluation_cache_provided if use_provided else evaluation_cache
@@ -87,7 +96,7 @@ def filter_errors(weights_name, true_class_filter, use_provided=False):
     gallery_items = [(m["image_path"], f"True: {m['true_label']} | Pred: {m['pred_label']} (Conf: {m['confidence']:.2f})") for m in misclassifications]
     return gallery_items
 
-def get_leaderboard_df(experiment="Initial_Experiments", show_filenames=False, sort_by="Accuracy", use_provided=False):
+def get_leaderboard_df(experiment="All models", show_filenames=False, sort_by="Accuracy", use_provided=False):
     cols = ["Stage", "Model", "Accuracy", "Precision", "Recall", "F1-Score"]
     cache = evaluation_cache_provided if use_provided else evaluation_cache
     if not cache:
@@ -178,20 +187,7 @@ h1 {
     background: transparent !important;
 }
 
-/* Force tables to expand without scrollbars */
-.metric-box .table-wrap,
-.metric-box .tbody,
-.metric-box .table-container,
-.metric-box div[class*='overflow'],
-.metric-box div,
-.full-height-table .table-wrap,
-.full-height-table .tbody,
-.full-height-table .table-container,
-.full-height-table div[class*='overflow'],
-.full-height-table div {
-    max-height: none !important;
-    overflow: visible !important;
-}
+/* End custom CSS */
 """
 
 my_theme = gr.themes.Monochrome(
@@ -220,11 +216,11 @@ def create_ui():
         with gr.Row():
             experiment_folders = get_experiment_folders()
             experiment_choices = [("All Models", "All models")] + [(format_experiment_name(f), f) for f in experiment_folders]
-            experiment_selector = gr.Radio(choices=experiment_choices, value="Initial_Experiments", label="Select Stage", interactive=True, scale=3)
+            experiment_selector = gr.Radio(choices=experiment_choices, value="All models", label="Select Stage", interactive=True, scale=3)
             sort_selector = gr.Radio(choices=["Accuracy", "Precision", "Recall", "F1-Score"], value="Accuracy", label="Sort By", interactive=True, scale=3)
             with gr.Column(scale=3):
                 show_filenames_toggle = gr.Checkbox(label="Show raw file names", value=False, interactive=True)
-                provided_eval_toggle = gr.Checkbox(label="Use Provided Pipeline (YOLO+Dataset)", value=False, interactive=True)
+                provided_eval_toggle = gr.Checkbox(label="Use proposed Pipeline (YOLOWorld + provided Dataset)", value=False, interactive=True)
         
         with gr.Tabs():
             with gr.TabItem("🏆 Leaderboard"):
@@ -234,14 +230,15 @@ def create_ui():
                     interactive=False,
                     headers=["Stage", "Model", "Accuracy ▼", "Precision", "Recall", "F1-Score"],
                     datatype=["str", "str", "str", "str", "str", "str"],
-                    elem_classes="metric-box",
-                    column_widths=["15%", "45%", "10%", "10%", "10%", "10%"]
+                    column_widths=["15%", "45%", "10%", "10%", "10%", "10%"],
+                    row_count=100,
+                    max_height=20000
                 )
                 
             with gr.TabItem("📊 Dataset Evaluation"):
                 with gr.Row():
                     model_dropdown = gr.Dropdown(
-                        choices=[(format_model_name(w), w) for w in get_model_list("Initial_Experiments")], 
+                        choices=[(format_model_name(w), w) for w in get_model_list("All models")], 
                         label="Select Pretrained Weights", 
                         interactive=True, 
                         scale=3
@@ -261,7 +258,8 @@ def create_ui():
                     label="Metrics by Breed",
                     headers=["Breed", "Precision", "Recall", "F1-Score", "Support"],
                     datatype=["str", "number", "number", "number", "number"],
-                    elem_classes="full-height-table"
+                    row_count=100,
+                    max_height=20000
                 )
                 
                 gr.Markdown("### 🔍 Confusion Matrix")
@@ -302,7 +300,7 @@ def create_ui():
                 with gr.Row():
                     with gr.Column(scale=1):
                         upload_img = gr.Image(type="filepath", label="Upload Image")
-                        analyze_btn = gr.Button("🤖 Run Inference Against All Models", variant="primary")
+                        analyze_btn = gr.Button("Run Inference Against All Models", variant="primary")
                     with gr.Column(scale=2):
                         multi_model_df = gr.Dataframe(
                             label="Model Predictions",
@@ -325,7 +323,7 @@ def create_ui():
                 gr.Markdown("<p style='color: #94a3b8;'>Monitor VRAM, Compute Utilization, and GPU Temperatures directly from the cluster.</p>")
                 GPUMonitor()
                 
-            demo.load(fn=get_leaderboard_df, inputs=[experiment_selector, show_filenames_toggle, sort_selector, provided_eval_toggle], outputs=[leaderboard_df_ui])
+            demo.load(fn=update_leaderboard, inputs=[experiment_selector, show_filenames_toggle, sort_selector, provided_eval_toggle], outputs=[leaderboard_df_ui])
             
             experiment_selector.change(
                 fn=update_leaderboard,

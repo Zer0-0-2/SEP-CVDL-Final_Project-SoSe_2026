@@ -16,6 +16,17 @@ script runs your model on every image and prints the standard classification
 metrics.
 
     python inference.py --image-folder <folder>
+
+Every pipeline choice (classifier architecture, backbone/model name, weights
+checkpoint, OOD gate on/off, OOD gate mode, threshold, temperature) defaults
+to whatever is set in config.yaml.
+Any of them can be overridden on the CLI without
+touching config.yaml, e.g. to try a different checkpoint or gate:
+
+    python inference.py --image-folder <folder> \
+        --classifier-type gcvit --model-name gcvit_tiny \
+        --weights-path <path/to/checkpoint>.pt \
+        --ood-enabled --ood-gate energy --ood-threshold -3.9
 """
 
 import argparse
@@ -73,7 +84,20 @@ class Model(nn.Module):
     src/ood/gate.py can be re-enabled with `ood.enabled: true`.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        classifier_type: str | None = None,
+        model_name: str | None = None,
+        weights_path: Path | str | None = None,
+        ood_enabled: bool | None = None,
+        ood_gate_mode: str | None = None,
+        ood_threshold: float | None = None,
+        ood_temperature: float | None = None,
+    ):
+        """All arguments default to config.yaml when omitted (None), so
+        `Model()` reproduces the submitted configuration. Pass any of them
+        to override just that one setting without touching config.yaml.
+        """
         super().__init__()
         sys.path.insert(0, str(PROJECT_ROOT))
         import animal_recognition.src.data.augmentations as augmentations
@@ -105,29 +129,53 @@ class Model(nn.Module):
         # ---- stage 2: classification ----------------------------------
         clf_cfg = self.cfg.classifier
         backbones = {"gcvit": GCViTClassifier, "convnext": ConvNextClassifier}
-        if self.cfg.pipeline.classifier not in backbones:
-            raise ValueError(f"Unknown pipeline.classifier: {self.cfg.pipeline.classifier!r}")
-        self.classifier = backbones[self.cfg.pipeline.classifier](
-            pretrained=False, model_name=clf_cfg.backbone
-        )
 
-        weights = Path(clf_cfg.weights)
+        classifier_type = classifier_type or self.cfg.pipeline.classifier
+        if classifier_type not in backbones:
+            raise ValueError(f"Unknown classifier_type: {classifier_type!r}")
+
+        if model_name is not None:
+            pass  # explicit override wins
+        elif classifier_type == self.cfg.pipeline.classifier:
+            model_name = clf_cfg.backbone  # unchanged from config -> use its backbone
+        else:
+            # classifier_type was overridden but model_name wasn't: config's
+            # backbone belongs to the *original* classifier and would build
+            # the wrong architecture, so fall back to a safe per-type default.
+            model_name = "convnext_tiny" if classifier_type == "convnext" else "gcvit_tiny"
+
+        self.classifier = backbones[classifier_type](pretrained=False, model_name=model_name)
+
+        weights = Path(weights_path) if weights_path is not None else Path(clf_cfg.weights)
         if not weights.is_absolute():
             weights = PROJECT_ROOT / weights
         if not weights.exists():
-            raise FileNotFoundError(f"Classifier weights not found: {weights}")
-        self.classifier.load_state_dict(torch.load(weights, map_location="cpu"))
+            raise FileNotFoundError(
+                f"Classifier weights not found: {weights}\n"
+                "Set classifier.weights in config.yaml, or pass --weights-path."
+            )
+        map_location = None if torch.cuda.is_available() else torch.device("cpu")
+        self.classifier.load_state_dict(torch.load(weights, map_location=map_location))
         self.classifier = self.classifier.to(self.device).eval()
 
         # Same validation transform the checkpoint was evaluated with.
         self._transform = augmentations.get_val_transforms(image_size=clf_cfg.image_size)
 
         # ---- stage 3: optional reject gate ----------------------------
+        ood_enabled = getattr(self.cfg.ood, "enabled", False) if ood_enabled is None else ood_enabled
         self.gate = None
-        if getattr(self.cfg.ood, "enabled", False):
+        if ood_enabled:
             from animal_recognition.src.ood.gate import OODGate
+            from types import SimpleNamespace
 
-            self.gate = OODGate(self.cfg)
+            gate_cfg = SimpleNamespace(
+                pipeline=SimpleNamespace(ood_gate=ood_gate_mode or self.cfg.pipeline.ood_gate),
+                ood=SimpleNamespace(
+                    threshold=self.cfg.ood.threshold if ood_threshold is None else ood_threshold,
+                    temperature=self.cfg.ood.temperature if ood_temperature is None else ood_temperature,
+                ),
+            )
+            self.gate = OODGate(gate_cfg)
 
     def forward(self, image: Image.Image) -> int:
         # YoloWorldDetector reads from disk, so the PIL image goes through a
@@ -160,11 +208,55 @@ class Model(nn.Module):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    # dataset selection
     parser.add_argument("--image-folder", type=Path, default="images")
+    # model selection
+    parser.add_argument(
+        "--classifier-type", type=str, default=None, choices=["convnext", "gcvit"],
+        help="Defaults to pipeline.classifier in config.yaml.",
+    )
+    parser.add_argument(
+        "--model-name", type=str, default=None,
+        help=(
+            "Backbone/architecture name, must match the checkpoint (e.g. "
+            "'convnext_tiny', 'convnext_small', 'gcvit_tiny'). Defaults to "
+            "classifier.backbone in config.yaml."
+        ),
+    )
+    parser.add_argument(
+        "--weights-path", type=Path, default=None,
+        help="Path to a .pt/.pth checkpoint. Defaults to classifier.weights in config.yaml.",
+    )
+    # OOD gate selection
+    parser.add_argument(
+        "--ood-enabled", action=argparse.BooleanOptionalAction, default=None,
+        help="Enable/disable the OOD gate. Defaults to ood.enabled in config.yaml.",
+    )
+    parser.add_argument(
+        "--ood-gate", type=str, default=None,
+        choices=["softmax_threshold", "energy", "temperature_scaling"],
+        help="OOD gate mode. Defaults to pipeline.ood_gate in config.yaml.",
+    )
+    parser.add_argument(
+        "--ood-threshold", type=float, default=None,
+        help="softmax_threshold: reject below this confidence. energy/temperature_scaling: reject above this energy. Defaults to ood.threshold in config.yaml.",
+    )
+    parser.add_argument(
+        "--ood-temperature", type=float, default=None,
+        help="Temperature T used by energy/temperature_scaling gates. Defaults to ood.temperature in config.yaml.",
+    )
     args = parser.parse_args()
 
     df = pd.read_csv(args.image_folder / "labels.csv")
-    model = Model().eval()
+    model = Model(
+        classifier_type=args.classifier_type,
+        model_name=args.model_name,
+        weights_path=args.weights_path,
+        ood_enabled=args.ood_enabled,
+        ood_gate_mode=args.ood_gate,
+        ood_threshold=args.ood_threshold,
+        ood_temperature=args.ood_temperature,
+    ).eval()
 
     y_true, y_pred = [], []
     with torch.no_grad():
@@ -176,7 +268,9 @@ if __name__ == "__main__":
 
     labels = [REJECT] + list(range(NUM_CLASSES))
     target_names = ["reject(-1)"] + CLASSES
-    print(f"\nAccuracy: {accuracy_score(y_true, y_pred):.4f}")
+    gate_desc = "disabled" if model.gate is None else model.gate.mode
+    print(f"\nClassifier: {model.classifier.__class__.__name__} | OOD gate: {gate_desc}")
+    print(f"Accuracy: {accuracy_score(y_true, y_pred):.4f}")
     print(classification_report(y_true, y_pred, labels=labels,
                                 target_names=target_names, digits=3,
                                 zero_division=0))

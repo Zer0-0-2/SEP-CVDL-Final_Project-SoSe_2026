@@ -1,7 +1,7 @@
 # Animal Recognition Challenge
 **SEP: Computer Vision & Deep Learning — Group Project**
 
-> **Status: active development — data pipeline complete, model training next**
+> **Status: pipeline trained and working. Final submission due 2 August 2026, 23:59 — see [Known issues](#known-issues-before-submission) below.**
 
 ---
 
@@ -11,47 +11,41 @@ Given an input image, the system returns a single integer:
 - `0–19` — one of 20 cat/dog breed indices
 - `-1` — reject (no target species present, or confidence below threshold)
 
-The evaluation interface is fixed at `inference.py`. Run it as:
+The evaluation interface the chair specified is `inference.py` at the project root:
 ```bash
 python inference.py --image-folder <path-to-folder>
 ```
 The folder must contain images and a `labels.csv` with columns `filename,label`.
 
----
-
-## XAI
-
-To use the Explainable AI run `run_xai.py` as:
-```bash
-python -m animal_recognition.src.xai.run_xai --image <path> --weights-path <pattern or path> --classifier <type> --classifier-type <modellname>
-```
-classifier is baseline_cnn convnext or gcvit.
+**This root file currently runs the old, retired pipeline (YOLOv8m + BaselineCNN/TransferClassifier) and its weights path in `config.yaml` doesn't exist — running it as-is raises `FileNotFoundError`.** The actually trained and validated pipeline (YoloWorld + ConvNeXt/GCViT + OOD gate) lives in [`animal_recognition/src/evaluation/InferenceBackup.py`](animal_recognition/src/evaluation/InferenceBackup.py) — see [Running inference](#running-inference) for the working command, and [Known issues](#known-issues-before-submission) for what needs to happen before submission.
 
 ---
 
 ## Pipeline
 
+Training and inference are two separate steps: classifiers are trained once and saved as `.pt` weights; inference combines the (frozen) detector, those weights, and the OOD gate into one forward pass.
+
 ```
 Input image (PIL)
       │
       ▼
-AnimalDetector (YOLOv8m, off-the-shelf)
-      │  → finds all cats/dogs in the image
-      │  → no detections → return -1
-      │  → selects largest bounding box by area
-      │  → crops and resizes to 224×224
+YoloWorldDetector (YOLO-World, open-vocabulary, off-the-shelf)
+      │  → open-vocabulary prompts restricted to the 20 accepted species
+      │  → no valid detection → return -1
+      │  → crops the best detection, resized to 224×224 (or the checkpoint's trained size)
       ▼
-Classifier (BaselineCNN or TransferClassifier)
+Classifier (ConvNeXt or GCViT, TIMM backbone, trained via animal_recognition/src/training/)
       │  → raw logits over 20 breed classes
       ▼
-OODGate
-      │  → max(softmax(logits)) < τ → return -1
-      │  → else → return argmax
+OODGate (optional, off by default — see config.yaml: ood.enabled)
+      │  softmax_threshold:    max(softmax(logits)) < threshold        → reject
+      │  energy / temperature_scaling:  -T·logsumexp(logits/T) > threshold → reject
+      │  else → argmax
       ▼
 {-1, 0, …, 19}
 ```
 
-Swap the classifier and OOD method by editing `config.yaml` — no code changes needed.
+Swap detector/classifier/OOD settings by editing `config.yaml` — no code changes needed for the scripts that read it (`InferenceBackup.py`, training scripts). The root `inference.py` and `evaluation/inference.py` only partially read `config.yaml` (see Known issues).
 
 ---
 
@@ -76,52 +70,67 @@ Swap the classifier and OOD method by editing `config.yaml` — no code changes 
 
 ```
 .
-├── config.yaml                         # pipeline routing + all hyperparameters
-├── inference.py                        # fixed evaluation interface (do not change outer structure)
-├── test_dataset.py                     # sanity checks for data pipeline
-├── requirements.txt                    
-├── README.md                           
-└── animal_recognition/                 
-    ├── models/                            
-    │   └── weights/                    # Default Directory to put your .pt weights in
-    ├── data/                           
-    │   ├── raw/                        # training images — one subfolder per breed (not committed)
-    │   ├── processed/                  # output folder of sanitize_scaped_data.py 
-    |   │   ├── rejected/               # rejected images (not used for training)
-    |   |   └── accepted/               # accepted images (used for training)
-    │   └── confounders/                # OOD images labelled -1 (not committed)
-    └── src/                            
-        ├── config.py                   # load_config() → dot-accessible config namespace
-        ├── data/                       
-        │   ├── dataset.py              # AnimalDataset (torch Dataset)
-        │   ├── augmentations_xxx.py    # Various augmenation files
-        │   ├── downloader_reddit.py    # gallery-dl scraper for breed subreddits
-        │   └── downloader_tiger_cat.py # ImageNet-1k streaming for Tiger Cat class
+├── config.yaml                         # pipeline routing + all hyperparameters (source of truth)
+├── inference.py                        # chair's fixed evaluation interface — currently BROKEN, see Known issues
+├── test_dataset.py                     # sanity checks for AnimalDataset — currently FAILS (data/raw/ is empty locally)
+├── requirements.txt
+├── README.md
+└── animal_recognition/
+    ├── models/
+    │   ├── yolov8x-worldv2.pt          # YOLO-World detector weights (auto-downloaded, gitignored)
+    │   └── weights/                    # misc weights (CLIP, gitignored); NOT where classifier checkpoints live
+    ├── data/
+    │   ├── raw/                        # training images, one subfolder per breed (gitignored)
+    │   ├── processed/                  # output of sanitize_scraped_data.py
+    │   │   ├── rejected/               # images the detector/sanitizer rejected
+    │   │   └── accepted/               # images actually used for training
+    │   ├── confounders/                # OOD images labelled -1 (gitignored)
+    │   ├── images/                     # flat eval set (labels.csv + 0000.jpg…), 143 imgs incl. real confounders (gitignored)
+    │   └── eval_flat/                  # flat eval set built from test_dataset/ via build_eval_folder.py (gitignored)
+    └── src/
+        ├── config.py                   # load_config() → dot-accessible config.yaml namespace
+        ├── data/
+        │   ├── dataset.py              # AnimalDataset (torch Dataset), expects data/raw/<Breed>/*.jpg
+        │   ├── augmentations.py / _mild.py / _stronger.py / _vetted.py   # augmentation presets, all used across the training scripts
+        │   ├── downloader_reddit.py    # gallery-dl scraper for breed subreddits (needs Firefox session cookie)
+        │   ├── downloader_tiger_cat.py # streams the Tiger Cat class from ImageNet-1k (gated HF dataset)
+        │   ├── downloader_test_dataset.py  # one-off: built the 100-img/breed held-out test set from Oxford Pets/Stanford Dogs/ImageNet-1k
+        │   └── sanitize_scraped_data.py    # runs YoloWorld over raw/ to split scraped images into processed/accepted vs rejected
         ├── models/
-        │   ├── baseline_cnn.py         # BaselineCNN - not used 
-        │   ├── classifier_convnext.py  # ConvNextV2 Class used for training (TIMM)
-        │   ├── classifier_gcvit.py     # GCViT Class used for training (TIMM)
-        │   ├── classifier_resnet.py    # ResNet50 (trained just once, not used further)
-        │   ├── yolo.py                 # YOLO26 detector (evaluated, not used in pipeline)
-        │   ├── yoloworld.py            # YoloWorld detector (evaluated, used in pipeline)
-        │   └── transfer_model.py       # TransferClassifier — timm backbone (TODO)
-        ├── training/                   
-        │   └── train_xxx.py            # Various training scripts all derived from train_classifier (Object oriented, parameterized)
-        ├── ood/                        
-        │   └── gate.py                 # OODGate — softmax threshold / energy (TODO)
-        ├── evaluation/                  
-        │   ├── detector_eval_yoloworld.py     # Script for evaluating yoloworld 
-        │   ├── detector_eval.ipynb     # Ipynb file to evaluate yoloworld 
-        |   └── inference_xxx  .py      # Various temporary inference scripts to test models against provided images
-        └── xai/                        
-            └── gradcam_wrapper.py      # GradCAMExplainer (TODO)
+        │   ├── yoloworld.py             # YoloWorldDetector — detector actually used in the pipeline
+        │   ├── classifier_convnext.py   # ConvNextClassifier (TIMM `convnext_*`) — used in the pipeline
+        │   ├── classifier_gcvit.py      # GCViTClassifier (TIMM `gcvit_*`) — used in the pipeline, current best model
+        │   ├── yolo.py                  # closed-vocabulary YOLO detector, evaluated but not used in the deployed pipeline
+        │   ├── detector.py              # old AnimalDetector (YOLOv8m) — superseded by yoloworld.py, only referenced by root inference.py
+        │   ├── baseline_cnn.py          # first classifier baseline, superseded, still used by src/xai/ scripts
+        │   ├── classifier_resnet50.py   # trained once for comparison, not used further, not imported anywhere
+        │   ├── classifier_swin.py       # Swin classifier, has its own training script, not part of the main pipeline
+        │   └── transfer_model.py        # TIMM-backbone wrapper, only used by root inference.py
+        ├── training/
+        │   ├── train_classifier.py             # main parameterized trainer (schedulers, augmentation presets, etc.)
+        │   ├── train_classifier_top_5.py / _2nd_attempt.py   # experiments narrowing to the 5 best configs
+        │   ├── train_bitfit_tiny.py / train_bitfit_base.py   # BitFit fine-tuning (bias/norm/head-only) for gcvit_tiny / gcvit_base
+        │   └── train_swin_classifier.py        # trains classifier_swin.py
+        ├── ood/
+        │   └── gate.py                  # OODGate — softmax_threshold / energy / temperature_scaling (all implemented)
+        ├── evaluation/
+        │   ├── InferenceBackup.py              # ✅ recommended: full pipeline + switchable OOD gate, tested working
+        │   ├── inference.py                     # ❌ pipeline works but has no OOD gate wired in, broken defaults, crashes on CPU-only machines
+        │   ├── inference_batch.py               # multi-model leaderboard via Tkinter file picker — needs a Tk-enabled Python, only detects gcvit/convnextv2 checkpoints by filename
+        │   ├── ood_gate_accuracy_comparison.py  # ✅ compares accuracy with vs. without the OOD gate, saves a bar chart
+        │   ├── build_eval_folder.py             # flattens data/test_dataset/<Breed>/*.jpg into the flat labels.csv format
+        │   ├── detector_eval_yoloworld.py       # sweeps YoloWorld confidence thresholds / prompt sets
+        │   └── detector_eval.ipynb              # notebook version of the above
+        └── xai/
+            ├── run_xai.py                # CLI entry point, supports baseline_cnn / convnext / gcvit / swin via a registry
+            ├── gradcam_xai.py             # Grad-CAM
+            ├── occlusion_xai.py           # occlusion sensitivity maps
+            └── layer_activation_xai.py    # layer activation visualization
 ```
 
 ---
 
 ## Setup
-
-Requires **a Tkinter-Version of Python**
 
 ```bash
 python -m venv venv
@@ -135,6 +144,8 @@ pip install -r requirements.txt --extra-index-url https://download.pytorch.org/w
 ```
 Adjust the ROCm version suffix to match your installed ROCm (e.g. `rocm6.0`).
 
+`inference_batch.py` additionally needs a Python built with Tk support (`import tkinter` must work) — it opens a native file picker. All other scripts in this repo do not need Tkinter.
+
 ---
 
 ## Getting the data
@@ -143,41 +154,100 @@ Adjust the ROCm version suffix to match your installed ROCm (e.g. `rocm6.0`).
 
 Requires `gallery-dl` with a Firefox session cookie:
 ```bash
-
-python animal_recognition/src/data/reddit_downloader.py
+python animal_recognition/src/data/downloader_reddit.py
 ```
 Downloads up to 200 images per class into `animal_recognition/data/raw/<ClassName>/`. Skips classes that already have 200+ images.
 
 ### Tiger Cat (ImageNet-1k)
 
-Tiger Cat has no dedicated subreddit. Images are streamed from the gated ImageNet-1k dataset on HuggingFace. 
+Tiger Cat has no dedicated subreddit. Images are streamed from the gated ImageNet-1k dataset on HuggingFace.
 ```bash
 huggingface-cli login      # one-time: accept terms at huggingface.co/datasets/ILSVRC/imagenet-1k first
 python animal_recognition/src/data/downloader_tiger_cat.py
 ```
 
+### Sanitizing scraped data
 
-
-
-## Configuration
-
-All pipeline routing and hyperparameters live in `config.yaml`:
-
-```yaml
-pipeline:
-  classifier: convnextv2_tiny   # adjust depending on the .pt file or whether you want to fine tune on your own
-  ood_gate: softmax_threshold   # 'softmax_threshold' | 'temperature_scaling' | 'energy'
-
-classifier:
-  transfer:
-    backbone: convnextv2_tiny   # adjust depending on the .pt file or whether you want to fine tune on your own
-```
-
-Change `classifier: baseline_cnn` to `classifier: transfer` to route through the transfer model. No other changes needed.
+`sanitize_scraped_data.py` runs the YoloWorld detector over `data/raw/` and splits images into `data/processed/accepted/` (used for training) and `data/processed/rejected/`.
 
 ---
 
+## Running inference
 
+All commands below assume `source venv/bin/activate` first, and are run from the project root.
+
+### Recommended: `InferenceBackup.py` (full pipeline, switchable OOD gate)
+
+```bash
+python -m animal_recognition.src.evaluation.InferenceBackup \
+    --image-folder animal_recognition/data/images \
+    --classifier-type gcvit \
+    --model-name gcvit_tiny \
+    --weights-path animal_recognition/src/models/models_weights/<weights_file>.pt \
+    --ood-gate softmax_threshold \
+    --ood-threshold 0.5
+```
+`--classifier-type` is `convnext` or `gcvit`; `--model-name` must match the checkpoint's architecture (e.g. `convnext_tiny`, `convnext_small`, `gcvit_tiny`). `--ood-gate` is `softmax_threshold` | `energy` | `temperature_scaling`; defaults for `--ood-gate`/`--ood-threshold`/`--ood-temperature` come from `config.yaml` if omitted. Prints accuracy, a full classification report, and the confusion matrix. Tested working end-to-end (CPU and GPU).
+
+### Comparing accuracy with vs. without the OOD gate
+
+```bash
+python -m animal_recognition.src.evaluation.ood_gate_accuracy_comparison \
+    --image-folder animal_recognition/data/images \
+    --classifier-type gcvit \
+    --model-name gcvit_tiny \
+    --weights-path animal_recognition/src/models/models_weights/<weights_file>.pt \
+    --ood-gate energy \
+    --ood-threshold -3.9
+```
+Reuses `InferenceBackup.Model` internally, prints per-image predictions and accuracy with/without the gate, and saves a bar chart to `oodGate_stats/`. Tested working.
+
+### Multi-model leaderboard (`inference_batch.py`)
+
+```bash
+python -m animal_recognition.src.evaluation.inference_batch --image-folder animal_recognition/data/images
+```
+Opens a native file picker (Tkinter) to select one or more `.pt` files, then ranks them by macro F1 in a Rich table. **Only infers `gcvit` or `convnextv2` architectures from the filename** — plain `convnext_*` checkpoints will raise `ValueError`. Needs a Tk-enabled Python; failed in this environment with `ModuleNotFoundError: No module named '_tkinter'`.
+
+### `evaluation/inference.py` — not currently recommended
+
+Same detector/classifier pipeline as `InferenceBackup.py` but without the OOD gate, and with two bugs confirmed by testing: the default `--weights-path` doesn't exist, and loading any checkpoint crashes on a CPU-only machine (`torch.load` is missing `map_location`). Use `InferenceBackup.py` instead until this is fixed.
+
+---
+
+## Configuration
+
+All pipeline routing and hyperparameters live in `config.yaml`. Current values:
+
+```yaml
+pipeline:
+  detector: yoloworld
+  classifier: gcvit
+  ood_gate: energy
+
+classifier:
+  backbone: gcvit_tiny
+  weights: animal_recognition/models/weights/Initial_Experiments/gcvit_tiny_..._bitfit_....pt   # ⚠ path does not exist, see Known issues
+
+ood:
+  enabled: false        # detector already rejects 36/40 confounders on the provided set
+  threshold: -3.9        # tuned for the energy gate
+  temperature: 1.0
+```
+
+Scripts that read `config.yaml` for their defaults (`InferenceBackup.py`, `ood_gate_accuracy_comparison.py`, training scripts) pick these up automatically; CLI flags always override them.
+
+---
+
+<a name="known-issues-before-submission"></a>
+## Known issues before submission
+
+1. **Root `inference.py` is broken.** It still wires the retired `AnimalDetector`/`BaselineCNN`/`TransferClassifier` pipeline, and its weights path (from `config.yaml: classifier.weights`) points at `animal_recognition/models/weights/Initial_Experiments/...`, which does not exist in this checkout. Since the chair runs exactly this file, this is the top priority: either point it at the working `InferenceBackup.Model` pipeline, or fix its config path and confirm the old pipeline still trains/loads.
+2. **`classifier.weights` in `config.yaml`** references a file that isn't present under `animal_recognition/models/weights/` — either the `Initial_Experiments/` folder needs to be recreated with that checkpoint, or the path should point at `animal_recognition/src/models/models_weights/` where the actual checkpoints live.
+3. **`evaluation/inference.py`** has no OOD gate and crashes on CPU-only machines (missing `map_location` in `torch.load`) — low priority since `InferenceBackup.py` replaces it, but worth deleting or fixing to avoid confusion.
+4. **`test_dataset.py` currently fails 6/6** because `animal_recognition/data/raw/` is empty in this checkout (mock placeholder images were removed). Not a code bug, but confirm the real training data is available wherever grading happens, or drop/update this sanity check.
+5. **`inference_batch.py`** needs a Tk-enabled Python and only recognizes `gcvit`/`convnextv2` filenames — currently unusable in this venv and can't evaluate the plain `convnext_*` checkpoints at all.
+6. Dead/legacy files that could be trimmed for a cleaner submission: `classifier_resnet50.py`, `yolo.py`, `detector.py`, `transfer_model.py`, `baseline_cnn.py` (only used by the retired pipeline and the XAI scripts), plus the near-duplicate `inference_batch.py`/`evaluation/inference.py`/`InferenceBackup.py` trio.
 
 ---
 
@@ -185,18 +255,18 @@ Change `classifier: baseline_cnn` to `classifier: transfer` to route through the
 
 | Component | Status |
 |---|---|
-| `AnimalDetector` (YOLOvWorld) | Done |
+| `YoloWorldDetector` | Done, deployed |
 | `AnimalDataset` | Done |
-| `Different Augmentations` | Done |
-| `config.yaml` + `config.py` | TODO |
-| `TIMM Models` | Done |
-| `Trainer` | Done |
-| `OODGate` | TODO |
-| `Evaluator` | Done |
-| `GradCAMExplainer` | TODO |
-| Wire `inference.py::Model` | TODO |
+| Augmentation presets | Done |
+| `config.yaml` + `config.py` | Done |
+| ConvNeXt / GCViT classifiers (TIMM) | Done, trained (see `models_weights/`) |
+| Trainer(s) | Done |
+| `OODGate` (softmax_threshold / energy / temperature_scaling) | Done, implemented and tuned; disabled by default (`ood.enabled: false`) |
+| `InferenceBackup.py` evaluator | Done, tested |
+| Root `inference.py` (chair's fixed interface) | **Broken — needs fixing before submission** |
+| GradCAM / Occlusion / Layer-Activation XAI | Done |
 | Download training data | Done |
-| Download testing data  | Done | 
+| Download testing data | Done |
 
 ---
 

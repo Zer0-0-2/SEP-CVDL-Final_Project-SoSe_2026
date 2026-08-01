@@ -53,11 +53,11 @@ classifier:
   num_classes: 20               # 20 breeds — reject is not an output node
 
   # timm backbone name; must match the checkpoint below.
-  backbone: gcvit_tiny
+  backbone: gcvit_base
 
   # Path to the .pt checkpoint, relative to this file (absolute also works).
-  # Best tiny run (By accuracy and F1): BitFit (biases + norms + head, 0.85% of parameters)
-  weights: animal_recognition/models/weights/Initial_Experiments/gcvit_tiny_gcvit_tiny_bitfit_preTrue_bs32_lr0.0001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt
+  # gcvit_base BitFit run (biases + norms + head only fine-tuned)
+  weights: animal_recognition/src/models/models_weights/gcvit_base_gcvit_base_bitfit_experiment_base_0.01_preTrue_bs32_lr0.001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt
 
   image_size: 224               # crop is padded/resized to this before the classifier
 
@@ -68,7 +68,7 @@ ood:
   # Disabled: the detector already rejects 36 of 40 confounders on the
   # provided set, and the gate thresholds were tuned on only 143 images.
   # Set to true to put the gate back in front of the classifier's argmax.
-  enabled: false
+  enabled: true
 
   # softmax_threshold: reject if max(softmax(logits)) < threshold  (higher = more rejections)
   # energy:            reject if energy score > threshold           (lower = more rejections)

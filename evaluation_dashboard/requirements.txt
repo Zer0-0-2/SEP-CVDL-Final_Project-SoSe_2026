@@ -1,0 +1,12 @@
+gradio
+timm
+pandas
+scikit-learn
+Pillow
+numpy<2
+albumentations
+gradio-gpu-monitor
+seaborn
+matplotlib
+ultralytics
+git+https://github.com/ultralytics/CLIP.git

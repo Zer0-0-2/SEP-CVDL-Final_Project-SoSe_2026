@@ -19,6 +19,15 @@ The folder must contain images and a `labels.csv` with columns `filename,label`.
 
 ---
 
+## XAI
+
+To use the Explainable AI run `run_xai.py` as:
+```bash
+python -m animal_recognition.src.xai.run_xai --image <path> --weights-path <pattern or path> --classifier <type> --classifier-type <modellname>
+```
+classifier is baseline_cnn convnext or gcvit.
+---
+
 ## Pipeline
 
 ```

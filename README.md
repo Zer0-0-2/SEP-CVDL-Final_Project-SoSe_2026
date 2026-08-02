@@ -216,7 +216,7 @@ classifier:
   weights: /Users/h.hunstein/Desktop/SEP-CVDL-Final_Project-SoSe_2026/animal_recognition/src/models/models_weights/gcvit_base_gcvit_base_bitfit_experiment_base_0.01_preTrue_bs32_lr0.001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt
 
 ood:
-  enabled: true        # detector already rejects 36/40 confounders on the provided set
+  enabled: true        
   threshold: -3.9        # tuned for the energy gate
   temperature: 1.0
 ```

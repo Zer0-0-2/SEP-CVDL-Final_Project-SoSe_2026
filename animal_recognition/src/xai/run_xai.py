@@ -7,7 +7,6 @@ from PIL import Image
 
 from animal_recognition.src.config import load_config
 from animal_recognition.src.data.dataset import CLASSES
-from animal_recognition.src.models.baseline_cnn import BaselineCNN
 from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
 from animal_recognition.src.models.classifier_gcvit import GCViTClassifier
 from animal_recognition.src.models.classifier_swin import SwinClassifier
@@ -17,7 +16,6 @@ from animal_recognition.src.xai.occlusion_xai import run_occlusion
 from animal_recognition.src.xai.layer_activation_xai import run_layer_activation
 
 CLASSIFIER_REGISTRY = {
-    "baseline_cnn": lambda model_name, num_classes: BaselineCNN(num_classes=num_classes),
     "convnext": lambda model_name, num_classes: ConvNextClassifier(pretrained=False, model_name=model_name),
     "gcvit": lambda model_name, num_classes: GCViTClassifier(pretrained=False, model_name=model_name),
     "swin": lambda model_name, num_classes: SwinClassifier(pretrained=False, model_name=model_name),

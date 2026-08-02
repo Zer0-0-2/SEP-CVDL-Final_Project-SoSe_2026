@@ -13,7 +13,7 @@ import argparse
 from pathlib import Path
 import matplotlib.pyplot as plt
 from animal_recognition.src.config import load_config
-from animal_recognition.src.models.baseline_cnn import BaselineCNN
+
 
 def run_gradcam(model: torch.nn.Module, image: Image.Image, cfg, target_class: int | None = None):
     model.eval()

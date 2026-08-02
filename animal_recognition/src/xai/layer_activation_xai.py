@@ -9,7 +9,7 @@ from PIL import Image
 from torchvision import transforms
 
 from animal_recognition.src.config import load_config
-from animal_recognition.src.models.baseline_cnn import BaselineCNN
+
 
 
 def run_layer_activation(model: torch.nn.Module, image: Image.Image, cfg, target_class: int | None = None):

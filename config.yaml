@@ -55,6 +55,7 @@ classifier:
 
   # Path to the .pt checkpoint, relative to this file 
   # gcvit_base BitFit run (biases + norms + head only fine-tuned)
+  # CHANGE THIS TO YOUR OWN PATH IF IT DIFFERS FROM THE DEFAULT
   weights: animal_recognition/models/weights/BitFit_Base/gcvit_base_gcvit_base_bitfit_experiment_base_0.01_preTrue_bs32_lr0.001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt  
   image_size: 224               # crop is padded/resized to this before the classifier
 
@@ -63,7 +64,7 @@ classifier:
 # -------------------------------------------------------------
 ood:
   # Set to true to put the gate back in front of the classifier's argmax.
-  enabled: false
+  enabled: true
 
   # softmax_threshold: reject if max(softmax(logits)) < threshold  (higher = more rejections)
   # energy:            reject if energy score > threshold           (lower = more rejections)

@@ -112,7 +112,7 @@ Swap detector/classifier/OOD settings by editing `config.yaml` — no code chang
 ## Setup
 
 ```bash
-python -m venv venv
+python -m venv venv (requires Python 3.11 otherwise numpy/scipy wheels fail to build)
 source venv/bin/activate
 pip install -r requirements.txt
 ```

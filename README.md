@@ -68,7 +68,7 @@ Swap detector/classifier/OOD settings by editing `config.yaml` — no code chang
 └── animal_recognition/
     ├── models/
     │   ├── yolov8x-worldv2.pt          # YOLO-World detector weights (auto-downloaded, gitignored)
-    │   └── weights/                    # misc weights (CLIP, gitignored); NOT where classifier checkpoints live
+    │   └── weights/                    # misc weights (CLIP); NOT where classifier checkpoints live
     ├── data/
     │   ├── processed/                  # output of sanitize_scraped_data.py
     │   │   ├── rejected/               # images the detector/sanitizer rejected

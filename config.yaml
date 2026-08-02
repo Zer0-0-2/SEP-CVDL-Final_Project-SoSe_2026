@@ -37,8 +37,6 @@ pipeline:
 detector:
   model: yolov8x-worldv2.pt     # s/m/l/x available; x has the best precision
 
-  # 0.05 sits at the knee of the recall/precision curve: recall 98.1%,
-  # precision 96.2% on the provided validation set.
   confidence_threshold: 0.05
 
   # Restrict the open vocabulary to its *accept* half at inference time.
@@ -65,8 +63,6 @@ classifier:
 # OOD gate
 # -------------------------------------------------------------
 ood:
-  # Disabled: the detector already rejects 36 of 40 confounders on the
-  # provided set, and the gate thresholds were tuned on only 143 images.
   # Set to true to put the gate back in front of the classifier's argmax.
   enabled: true
 
@@ -104,7 +100,7 @@ data:
   normalize_std: [0.229, 0.224, 0.225]    # ImageNet std  — used by xAI scripts
 
 # -------------------------------------------------------------
-# xAI (Explainability) — used by src/xai/ scripts
+# xAI — used by src/xai/ scripts
 # -------------------------------------------------------------
 xai:
   enabled: false

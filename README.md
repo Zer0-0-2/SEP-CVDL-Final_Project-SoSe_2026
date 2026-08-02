@@ -196,7 +196,6 @@ Run the following comand with any picture:
 ```bash
 python -m animal_recognition.src.xai.run_xai --image <path> --weights-path <pattern or path> --classifier <type> --classifier-type <modellname>
 ```
-classifiers are either convnext or gcvit.
 `--classifier` is `convnext` or `gcvit`; `--classifier-type` must match the checkpoint's architecture (e.g. `convnext_tiny`, `convnext_small`, `gcvit_tiny`).
 
 ---

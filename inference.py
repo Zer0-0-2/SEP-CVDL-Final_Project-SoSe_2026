@@ -100,7 +100,7 @@ class Model(nn.Module):
         """
         super().__init__()
         sys.path.insert(0, str(PROJECT_ROOT))
-        import animal_recognition.src.data.augmentations as augmentations
+        import animal_recognition.src.data.augmentations_stronger as augmentations
         from animal_recognition.src.config import load_config
         from animal_recognition.src.models.classifier_convnext import ConvNextClassifier
         from animal_recognition.src.models.classifier_gcvit import GCViTClassifier

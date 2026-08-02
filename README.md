@@ -2,7 +2,7 @@
 **SEP: Computer Vision & Deep Learning — Group Project**
 **Participants: Valerio, Tristan, Henrik**
 
-> **Status: pipeline trained and working. Final submission due 2 August 2026, 23:59**
+
 
 ---
 
@@ -25,7 +25,7 @@ The folder must contain images and a `labels.csv` with columns `filename,label`.
 Training and inference are two separate steps: classifiers are trained once and saved as `.pt` weights; inference combines the (frozen) detector, those weights, and the OOD gate into one forward pass.
 
 ```
-Input image (PIL)
+Input image
       │
       ▼
 YoloWorldDetector (YOLO-World, open-vocabulary, off-the-shelf)
@@ -44,7 +44,7 @@ OODGate (optional, on by default — see config.yaml: ood.enabled)
 {-1, 0, …, 19}
 ```
 
-Swap detector/classifier/OOD settings by editing `config.yaml` — no code changes needed for the scripts that read it (`InferenceBackup.py`, training scripts) as well as the root `Inference.py`.
+Swap detector/classifier/OOD/XAI settings by editing `config.yaml` — no code changes needed for the scripts that read it (evaluation scripts, XAi) as well as the root `inference.py`.
 
 ---
 
@@ -65,6 +65,8 @@ Swap detector/classifier/OOD settings by editing `config.yaml` — no code chang
 │   ├── utils.py                        # checkpoint discovery, SHA256 hashing, name formatting
 │   ├── Dockerfile / docker-compose.yml # container build for the dashboard
 │   └── requirements.txt                # dashboard-only dependencies (gradio, seaborn, …)
+├── results/                             # CSVs backing the report (leaderboards, YoloWorld threshold sweeps)
+├── visualizations/                      # notebooks that turn results/ into report figures
 └── animal_recognition/
     ├── models/
     │   ├── yolov8x-worldv2.pt          # YOLO-World detector weights (auto-downloaded)
@@ -153,7 +155,7 @@ python animal_recognition/src/data/downloader_tiger_cat.py
 
 All commands below assume `source venv/bin/activate` first, and are run from the project root.
 
-### `Inference.py`
+### `inference.py`
 
 ```bash
 python inference.py # assumes you have the provided images folder in root of the project
@@ -167,20 +169,18 @@ python -m animal_recognition.src.evaluation.ood_gate_accuracy_comparison \
     --image-folder animal_recognition/data/images \
     --classifier-type gcvit \
     --model-name gcvit_tiny \
-    --weights-path animal_recognition/src/models/models_weights/<weights_file>.pt \
+    --weights-path animal_recognition/models/weights/<weights_file>.pt \
     --ood-gate energy \
     --ood-threshold -3.9
 ```
-Reuses `InferenceBackup.Model` internally, prints per-image predictions and accuracy with/without the gate, and saves a bar chart to `oodGate_stats/`. Tested working.
+Reuses `InferenceBackup.Model` internally, prints per-image predictions and accuracy with/without the gate, and saves a bar chart to `oodGate_stats/`. 
 
 ### Multi-model leaderboard (`inference_batch.py`)
 
 ```bash
 python -m animal_recognition.src.evaluation.inference_batch --image-folder images
 ```
-Opens a native file picker (Tkinter) to select one or more `.pt` files, then ranks them by macro F1 in a Rich table. **Only infers `gcvit` or `convnextv2` architectures from the filename** — plain `convnext_*` checkpoints will raise `ValueError`. Needs a Tk-enabled Python; failed in this environment with `ModuleNotFoundError: No module named '_tkinter'`.
-
-
+Opens a native file picker (Tkinter) to select one or more `.pt` files, then ranks them by macro F1 in a Rich table.  Infers `gcvit` or `convnextv2` architectures from the filename, needs a Tk-enabled Python.
 
 ## run Explainable AI
 
@@ -192,7 +192,7 @@ python -m animal_recognition.src.xai.run_xai --image <path> --weights-path <patt
 
 ---
 
-Scripts that read `config.yaml` for their defaults ( `inference.py`, `InferenceBackup.py`, `ood_gate_accuracy_comparison.py`) pick these up automatically; 
+Scripts that read `config.yaml` for their defaults (`inference.py`, `ood_gate_accuracy_comparison.py`) pick these up automatically; 
 CLI flags override them.
 
 ---

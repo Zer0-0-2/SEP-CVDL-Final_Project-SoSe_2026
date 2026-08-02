@@ -53,10 +53,9 @@ classifier:
   # timm backbone name; must match the checkpoint below.
   backbone: gcvit_base
 
-  # Path to the .pt checkpoint, relative to this file (absolute also works).
+  # Path to the .pt checkpoint, relative to this file 
   # gcvit_base BitFit run (biases + norms + head only fine-tuned)
-  weights: animal_recognition/src/models/models_weights/gcvit_base_gcvit_base_bitfit_experiment_base_0.01_preTrue_bs32_lr0.001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt
-
+  weights: animal_recognition/models/weights/BitFit_Base/gcvit_base_gcvit_base_bitfit_experiment_base_0.01_preTrue_bs32_lr0.001_wd0_ls0.0_sz224_augstronger_schedCosineLRScheduler.pt  
   image_size: 224               # crop is padded/resized to this before the classifier
 
 # -------------------------------------------------------------
@@ -64,28 +63,13 @@ classifier:
 # -------------------------------------------------------------
 ood:
   # Set to true to put the gate back in front of the classifier's argmax.
-  enabled: true
+  enabled: false
 
   # softmax_threshold: reject if max(softmax(logits)) < threshold  (higher = more rejections)
   # energy:            reject if energy score > threshold           (lower = more rejections)
   threshold: -3.9
   temperature: 1.0      # T for energy/temperature_scaling: divides logits before softmax
 
-# -------------------------------------------------------------
-# Training
-# -------------------------------------------------------------
-training:
-  seed: 42
-  epochs: 25            # total epochs for baseline_cnn; ignored for transfer (uses phases below)
-  batch_size: 32
-  lr: 1.0e-3
-  weight_decay: 1.0e-4
-  num_workers: 4
-
-  # Three-phase fine-tuning (transfer only — used by trainer.py)
-  phase1_epochs: 5      # freeze backbone, train head only at lr
-  phase2_epochs: 10     # unfreeze last 2 backbone blocks, lr / 10
-  phase3_epochs: 10     # unfreeze full network, cosine annealing to 0
 
 # -------------------------------------------------------------
 # Data
@@ -112,10 +96,3 @@ xai:
     stride: 16          # sliding step size
     batch_size: 32      # occluded versions processed per forward pass
 
-# -------------------------------------------------------------
-# Logging
-# -------------------------------------------------------------
-logging:
-  use_wandb: false
-  project: sep-cvdl-animal-recognition
-  run_name: null        # auto-generated from timestamp if null

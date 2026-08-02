@@ -1,0 +1,201 @@
+model_name,class_set,cutoff,confidence_threshold,accuracy,true positive,true negative,false postivie,false negative,precision,recall,f1_score
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.9020979020979021,95,34,6,8,0.9405940594059405,0.9223300970873787,0.9313725490196079
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.8951048951048951,94,34,6,9,0.94,0.912621359223301,0.9261083743842364
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.8951048951048951,94,34,6,9,0.94,0.912621359223301,0.9261083743842364
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.8951048951048951,93,35,5,10,0.9489795918367347,0.9029126213592233,0.9253731343283583
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.8951048951048951,92,36,4,11,0.9583333333333334,0.8932038834951457,0.9246231155778895
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.8881118881118881,90,37,3,13,0.967741935483871,0.8737864077669902,0.9183673469387754
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.8811188811188811,89,37,3,14,0.967391304347826,0.8640776699029126,0.9128205128205128
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.8811188811188811,89,37,3,14,0.967391304347826,0.8640776699029126,0.9128205128205128
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.8461538461538461,84,37,3,19,0.9655172413793104,0.8155339805825242,0.8842105263157896
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.8391608391608392,82,38,2,21,0.9761904761904762,0.7961165048543689,0.8770053475935828
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.05,0.916083916083916,100,31,9,3,0.9174311926605505,0.970873786407767,0.9433962264150944
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.1,0.9230769230769231,99,33,7,4,0.9339622641509434,0.9611650485436893,0.9473684210526316
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.15,0.9230769230769231,98,34,6,5,0.9423076923076923,0.9514563106796117,0.9468599033816425
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.2,0.9230769230769231,97,35,5,6,0.9509803921568627,0.941747572815534,0.9463414634146341
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.25,0.9300699300699301,97,36,4,6,0.9603960396039604,0.941747572815534,0.9509803921568628
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.3,0.9230769230769231,96,36,4,7,0.96,0.9320388349514563,0.9458128078817734
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.35,0.9230769230769231,95,37,3,8,0.9693877551020408,0.9223300970873787,0.9452736318407962
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.4,0.9230769230769231,95,37,3,8,0.9693877551020408,0.9223300970873787,0.9452736318407962
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.45,0.916083916083916,94,37,3,9,0.9690721649484536,0.912621359223301,0.94
+yolov8s-worldv2.pt,"['cat', 'dog']",,0.5,0.9090909090909091,93,37,3,10,0.96875,0.9029126213592233,0.9346733668341708
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.05,0.916083916083916,100,31,9,3,0.9174311926605505,0.970873786407767,0.9433962264150944
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.1,0.9300699300699301,99,34,6,4,0.9428571428571428,0.9611650485436893,0.951923076923077
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.15,0.9230769230769231,98,34,6,5,0.9423076923076923,0.9514563106796117,0.9468599033816425
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.2,0.9230769230769231,97,35,5,6,0.9509803921568627,0.941747572815534,0.9463414634146341
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.25,0.9300699300699301,97,36,4,6,0.9603960396039604,0.941747572815534,0.9509803921568628
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.3,0.9230769230769231,96,36,4,7,0.96,0.9320388349514563,0.9458128078817734
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.35,0.9230769230769231,95,37,3,8,0.9693877551020408,0.9223300970873787,0.9452736318407962
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.4,0.9230769230769231,95,37,3,8,0.9693877551020408,0.9223300970873787,0.9452736318407962
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.45,0.916083916083916,94,37,3,9,0.9690721649484536,0.912621359223301,0.94
+yolov8s-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.5,0.9020979020979021,92,37,3,11,0.968421052631579,0.8932038834951457,0.9292929292929294
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.9090909090909091,96,34,6,7,0.9411764705882353,0.9320388349514563,0.9365853658536586
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.8951048951048951,94,34,6,9,0.94,0.912621359223301,0.9261083743842364
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.8951048951048951,94,34,6,9,0.94,0.912621359223301,0.9261083743842364
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.8951048951048951,94,34,6,9,0.94,0.912621359223301,0.9261083743842364
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.8951048951048951,92,36,4,11,0.9583333333333334,0.8932038834951457,0.9246231155778895
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.8951048951048951,92,36,4,11,0.9583333333333334,0.8932038834951457,0.9246231155778895
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.8881118881118881,90,37,3,13,0.967741935483871,0.8737864077669902,0.9183673469387754
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.8811188811188811,89,37,3,14,0.967391304347826,0.8640776699029126,0.9128205128205128
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.8671328671328671,87,37,3,16,0.9666666666666667,0.8446601941747572,0.9015544041450777
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.8741258741258742,87,38,2,16,0.9775280898876404,0.8446601941747572,0.9062499999999999
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.05,0.9230769230769231,99,33,7,4,0.9339622641509434,0.9611650485436893,0.9473684210526316
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.1,0.9230769230769231,98,34,6,5,0.9423076923076923,0.9514563106796117,0.9468599033816425
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.15,0.916083916083916,97,34,6,6,0.941747572815534,0.941747572815534,0.941747572815534
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.2,0.916083916083916,95,36,4,8,0.9595959595959596,0.9223300970873787,0.9405940594059405
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.25,0.9020979020979021,93,36,4,10,0.9587628865979382,0.9029126213592233,0.9299999999999999
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.3,0.9020979020979021,92,37,3,11,0.968421052631579,0.8932038834951457,0.9292929292929294
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.35,0.8881118881118881,90,37,3,13,0.967741935483871,0.8737864077669902,0.9183673469387754
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.4,0.8881118881118881,90,37,3,13,0.967741935483871,0.8737864077669902,0.9183673469387754
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.45,0.8741258741258742,87,38,2,16,0.9775280898876404,0.8446601941747572,0.9062499999999999
+yolov8s-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.5,0.8601398601398601,85,38,2,18,0.9770114942528736,0.8252427184466019,0.8947368421052632
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.9300699300699301,99,34,6,4,0.9428571428571428,0.9611650485436893,0.951923076923077
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.9300699300699301,98,35,5,5,0.9514563106796117,0.9514563106796117,0.9514563106796117
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.9300699300699301,98,35,5,5,0.9514563106796117,0.9514563106796117,0.9514563106796117
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.9300699300699301,96,37,3,7,0.9696969696969697,0.9320388349514563,0.9504950495049505
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.9300699300699301,95,38,2,8,0.979381443298969,0.9223300970873787,0.95
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.9230769230769231,94,38,2,9,0.9791666666666666,0.912621359223301,0.9447236180904524
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.9020979020979021,91,38,2,12,0.978494623655914,0.883495145631068,0.9285714285714286
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.8881118881118881,89,38,2,14,0.978021978021978,0.8640776699029126,0.9175257731958761
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.8671328671328671,85,39,1,18,0.9883720930232558,0.8252427184466019,0.8994708994708994
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.05,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.1,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.15,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.2,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.25,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.3,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.35,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.4,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.45,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8m-worldv2.pt,"['cat', 'dog']",,0.5,0.916083916083916,94,37,3,9,0.9690721649484536,0.912621359223301,0.94
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.05,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.1,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.15,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.2,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.25,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.3,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.35,0.951048951048951,99,37,3,4,0.9705882352941176,0.9611650485436893,0.9658536585365853
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.4,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.45,0.9300699300699301,96,37,3,7,0.9696969696969697,0.9320388349514563,0.9504950495049505
+yolov8m-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.5,0.916083916083916,94,37,3,9,0.9690721649484536,0.912621359223301,0.94
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.9300699300699301,97,36,4,6,0.9603960396039604,0.941747572815534,0.9509803921568628
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.916083916083916,95,36,4,8,0.9595959595959596,0.9223300970873787,0.9405940594059405
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.9300699300699301,95,38,2,8,0.979381443298969,0.9223300970873787,0.95
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.9230769230769231,94,38,2,9,0.9791666666666666,0.912621359223301,0.9447236180904524
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.9090909090909091,92,38,2,11,0.9787234042553191,0.8932038834951457,0.934010152284264
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.9090909090909091,92,38,2,11,0.9787234042553191,0.8932038834951457,0.934010152284264
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.05,0.9230769230769231,100,32,8,3,0.9259259259259259,0.970873786407767,0.9478672985781991
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.1,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.15,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.2,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.25,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.3,0.9230769230769231,94,38,2,9,0.9791666666666666,0.912621359223301,0.9447236180904524
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.35,0.9230769230769231,94,38,2,9,0.9791666666666666,0.912621359223301,0.9447236180904524
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.4,0.8951048951048951,90,38,2,13,0.9782608695652174,0.8737864077669902,0.923076923076923
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.45,0.8951048951048951,90,38,2,13,0.9782608695652174,0.8737864077669902,0.923076923076923
+yolov8m-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.5,0.8671328671328671,86,38,2,17,0.9772727272727273,0.8349514563106796,0.9005235602094241
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.958041958041958,102,35,5,1,0.9532710280373832,0.9902912621359223,0.9714285714285714
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.9440559440559441,97,38,2,6,0.9797979797979798,0.941747572815534,0.9603960396039605
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.9440559440559441,97,38,2,6,0.9797979797979798,0.941747572815534,0.9603960396039605
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.9440559440559441,97,38,2,6,0.9797979797979798,0.941747572815534,0.9603960396039605
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.05,0.9440559440559441,101,34,6,2,0.9439252336448598,0.9805825242718447,0.9619047619047619
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.1,0.9440559440559441,101,34,6,2,0.9439252336448598,0.9805825242718447,0.9619047619047619
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.15,0.9440559440559441,101,34,6,2,0.9439252336448598,0.9805825242718447,0.9619047619047619
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.2,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.25,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.3,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.35,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.4,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.45,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8l-worldv2.pt,"['cat', 'dog']",,0.5,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.05,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.1,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.15,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.2,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.25,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.3,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.35,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.4,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.45,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8l-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.5,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.9440559440559441,97,38,2,6,0.9797979797979798,0.941747572815534,0.9603960396039605
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.9440559440559441,97,38,2,6,0.9797979797979798,0.941747572815534,0.9603960396039605
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.05,0.9440559440559441,102,33,7,1,0.9357798165137615,0.9902912621359223,0.9622641509433962
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.1,0.9300699300699301,100,33,7,3,0.9345794392523364,0.970873786407767,0.9523809523809522
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.15,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.2,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.25,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.3,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.35,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.4,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.45,0.951048951048951,98,38,2,5,0.98,0.9514563106796117,0.9655172413793104
+yolov8l-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.5,0.9370629370629371,96,38,2,7,0.9795918367346939,0.9320388349514563,0.9552238805970149
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.958041958041958,101,36,4,2,0.9619047619047619,0.9805825242718447,0.9711538461538461
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.9300699300699301,97,36,4,6,0.9603960396039604,0.941747572815534,0.9509803921568628
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.9230769230769231,95,37,3,8,0.9693877551020408,0.9223300970873787,0.9452736318407962
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.9230769230769231,95,37,3,8,0.9693877551020408,0.9223300970873787,0.9452736318407962
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.9090909090909091,93,37,3,10,0.96875,0.9029126213592233,0.9346733668341708
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.05,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.1,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.15,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.2,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.25,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.3,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.35,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.4,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.45,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8x-worldv2.pt,"['cat', 'dog']",,0.5,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.05,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.1,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.15,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.2,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.25,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.3,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.35,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.4,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.45,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8x-worldv2.pt,"['cat', 'dog', 'tiger']",tiger,0.5,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.05,0.958041958041958,101,36,4,2,0.9619047619047619,0.9805825242718447,0.9711538461538461
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.1,0.958041958041958,101,36,4,2,0.9619047619047619,0.9805825242718447,0.9711538461538461
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.15,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.2,0.951048951048951,100,36,4,3,0.9615384615384616,0.970873786407767,0.966183574879227
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.25,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.3,0.9440559440559441,99,36,4,4,0.9611650485436893,0.9611650485436893,0.9611650485436893
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.35,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.4,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.45,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'tiger', 'big tiger', 'fox', 'wolf', 'coyote', 'drawing', 'painting']",tiger,0.5,0.9370629370629371,97,37,3,6,0.97,0.941747572815534,0.9556650246305418
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.05,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.1,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.15,0.951048951048951,101,35,5,2,0.9528301886792453,0.9805825242718447,0.9665071770334929
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.2,0.9440559440559441,100,35,5,3,0.9523809523809523,0.970873786407767,0.9615384615384616
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.25,0.9370629370629371,99,35,5,4,0.9519230769230769,0.9611650485436893,0.9565217391304348
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.3,0.9300699300699301,98,35,5,5,0.9514563106796117,0.9514563106796117,0.9514563106796117
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.35,0.9370629370629371,98,36,4,5,0.9607843137254902,0.9514563106796117,0.9560975609756097
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.4,0.9440559440559441,98,37,3,5,0.9702970297029703,0.9514563106796117,0.9607843137254902
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.45,0.9300699300699301,96,37,3,7,0.9696969696969697,0.9320388349514563,0.9504950495049505
+yolov8x-worldv2.pt,"['cat', 'dog', 'domestic cat', 'domestic dog', 'sphynx cat', 'bombay cat', 'birman cat', 'tiger']",tiger,0.5,0.916083916083916,94,37,3,9,0.9690721649484536,0.912621359223301,0.94

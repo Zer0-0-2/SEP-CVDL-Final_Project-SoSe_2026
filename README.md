@@ -215,6 +215,18 @@ Same detector/classifier pipeline as `InferenceBackup.py` but without the OOD ga
 
 ---
 
+
+## run Explainable AI
+
+Run the following comand with any picture:
+```bash
+python -m animal_recognition.src.xai.run_xai --image <path> --weights-path <pattern or path> --classifier <type> --classifier-type <modellname>
+```
+classifiers are either convnext or gcvit.
+For weigths you can either use a specific path or a part of the weights name.
+
+---
+
 ## Configuration
 
 All pipeline routing and hyperparameters live in `config.yaml`. Current values:
